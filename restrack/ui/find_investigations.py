@@ -16,7 +16,7 @@ class Find_investigations():
         pn.extension('tabulator',sizing_mode="stretch_width")
         self.results_tabulator_object = pn.widgets.Tabulator()
         self.taglist=pd.DataFrame()#initalise variable for update taglist-part of failed attempt to put an event listener on the table
-        self.display_handler()
+        self.output=self.display_handler()
      
 
     def clickhandler(self,clicked):
@@ -50,8 +50,8 @@ class Find_investigations():
         table_select_button=pn.widgets.Button(name="Select table to track on", button_type='primary',width=500)
         hn=hosp_numb.param.value
         self.binding1=pn.bind(self.show_table, hn) 
-        show_table=pn.bind(self.clickhandler,enter_hosp_no)
-        pn.panel(pn.bind(self.clickhandler2, select_button))
+        self.show_table=pn.bind(self.clickhandler,enter_hosp_no)
+        pn.panel(pn.bind(self.clickhandler2, select_button))#mysteriously doesn't work if this binding is not panel!
 
 
 
@@ -60,11 +60,13 @@ class Find_investigations():
         main=[
         pn.Column(
         pn.Row(hosp_numb, enter_hosp_no),
-        pn.Row(pn.panel(show_table)),
+        pn.Row(pn.panel(self.show_table)),
         pn.Row(select_button),
         pn.Row("Select the tables you want to track on"),
         #pn.Row(display_tracking_tables),
         pn.Row(table_select_button))]
         ).servable()    
 
-        pn.serve(output,port=5000)
+        return output
+
+        #pn.serve(output,port=5000)
