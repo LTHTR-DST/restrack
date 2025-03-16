@@ -23,13 +23,14 @@ import json
 import panel as pn
 from restrack.ui.remove_order_from_worklist import remove_order_from_worklist
 from restrack.ui.user_components import create_user_form
-from restrack.ui.worklist_components import create_worklist_form, display_worklist
+from restrack.ui.worklist_components import create_worklist_form, display_worklist, unsubscribe_worklist
 from restrack.ui.order_components import display_orders
 from restrack.ui.orders_for_patient_form import orders_for_patient_form
 import requests
 from dotenv import find_dotenv, load_dotenv
 from restrack.config import API_URL
 from param.parameterized import Event
+
 
 pn.extension("tabulator")
 
@@ -129,13 +130,16 @@ def remove_order_from_worklist_event(event):
 user_form = create_user_form()
 
 # Initialize worklist select with current user
-def initialise_worklist_select():
+def initialise_worklist_select(called_from):
     try:
         worklist_select = display_worklist(current_user.get("id"))
         if worklist_select is None:
             print("Warning: worklist_select is None")  # Debug logging
             worklist_select = pn.widgets.Select(name="Select Worklist", options=[])
-        worklist_select.param.watch(fn=worklist_selected, parameter_names="value")
+        if called_from =="choose_worklist":
+            worklist_select.param.watch(fn=worklist_selected, parameter_names="value")
+        elif called_from == "unsubscribe_worklist":
+            worklist_select.param.watch(fn=unsubscribe_worklist, parameter_names="value")
     except Exception as e:
         print(f"Error initializing worklist: {e}")  # Debug logging
         worklist_select = pn.widgets.Select(name="Select Worklist", options=[])
@@ -148,8 +152,10 @@ def refresh_worklist_select():
     worklist_select.options = new_select.options
     template.modal.close()
 
+
+
 # Create initial worklist select
-worklist_select = initialise_worklist_select()
+worklist_select = initialise_worklist_select("choose_worklist")
 
 # Create worklist form with refresh callback
 worklist_form = create_worklist_form(current_user.get("id"), refresh_callback=refresh_worklist_select)
@@ -251,8 +257,25 @@ main_content = pn.Column(
     orders_table_placeholder, pn.Row(btn_mark_as_completed, btn_remove_from_worklist,btn_add_to_worklist)
 )
 
-tabs = pn.Tabs(("Main", main_content), dynamic=True)
+# Create worklist management content
+worklist_select_for_unsubscribe = initialise_worklist_select("unsubscribe_worklist")
+worklist_management = pn.Column(
+    "Select a worklist to unsubscribe from:",
+    worklist_select_for_unsubscribe
+)
 
+
+worklist_select.param.watch(
+    unsubscribe_worklist,
+    parameter_names="value"
+)
+
+
+tabs = pn.Tabs(
+    ("Main", main_content),
+    ("Manage worklists", worklist_management),
+    dynamic=True
+)
 
 # Admin content
 if pn.state.user == "admin":

@@ -17,6 +17,7 @@ import panel as pn
 import requests
 import json
 from restrack.config import API_URL
+from param.parameterized import Event
 
 
 def create_worklist_form(user_id: int, refresh_callback=None):
@@ -79,7 +80,6 @@ def create_worklist_form(user_id: int, refresh_callback=None):
 
 def display_worklist(user_id: int):
     try:
-        # Use proper URL path joining
         url = f"{API_URL}/worklists/user/{user_id}"
         print(f"Fetching worklists from: {url}")  # Debug logging
         
@@ -100,3 +100,23 @@ def display_worklist(user_id: int):
             options=[],
             width=200
         )
+
+def unsubscribe_worklist(event: Event):
+    print(f"Worklist selected: {event.new}")  # Debug logging
+    if event.new is None:
+        return
+    worklist_id = event.new[0]
+    if worklist_id:
+        unsubscribe_worklist= {
+            "user_id": pn.state.cache["current_user"]["id"],
+            "worklist_id": worklist_id,
+        }
+        unsubscribe_worklist = json.dumps(unsubscribe_worklist)
+        r = requests.delete(f"{API_URL}/unsubscribe_worklist/{unsubscribe_worklist}")
+        if r.status_code == 200:
+            print(r)
+            return r
+    print("error")
+    return False
+
+

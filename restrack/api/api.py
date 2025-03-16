@@ -436,3 +436,32 @@ def delete_worklist(orders_for_removal: str, local_session: Session = Depends(ge
         
         session.commit()
         return orders_to_delete[0] if orders_to_delete else None
+    
+
+#under development
+@app.delete("/unsubscribe_worklist/{unsubscribe_worklist}", response_model=UserWorkList)
+def unubscribe_worklist(unsubscribe_worklist: str, local_session: Session = Depends(get_app_db_session)):
+    """
+   Unsubscribes a user from a worklist
+    Args:
+     unsubscribe_workists JSON string containing user_id and worklist_id
+    Returns:
+       the deletd worklist
+    """
+    with local_session as session:
+        unsubscribe_worklist= json.loads(unsubscribe_worklist)
+        statement = select(UserWorkList).where(
+            and_(
+               UserWorkList.worklist_id == unsubscribe_worklist["worklist_id"],
+               UserWorkList.user_id == unsubscribe_worklist["user_id"]
+            )
+        )
+        worklist_to_unsubscribe = session.exec(statement).first()
+        
+        if not worklist_to_unsubscribe:
+            raise HTTPException(status_code=404, detail="Orders not found in worklist")
+            
+        session.delete(worklist_to_unsubscribe)
+        
+        session.commit()
+        return worklist_to_unsubscribe if worklist_to_unsubscribe else None
