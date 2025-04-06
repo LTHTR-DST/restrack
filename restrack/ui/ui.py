@@ -74,7 +74,7 @@ def worklist_selected(event: Event):
         orders_table_placeholder.clear()
         orders_table_placeholder.append(pn.state.cache["current_table"])
     except Exception as e:
-        print(f"Error displaying orders: {e}")  # Debug logging
+        print(f"Error displaying orders: {e}")  
         orders_table_placeholder.clear()
         orders_table_placeholder.append(pn.pane.Markdown("Error loading orders"))
 
@@ -124,6 +124,11 @@ def remove_order_from_worklist_event(event):
         orders_table_placeholder.clear()
         orders_table_placeholder.append(pn.state.cache["current_table"])
 
+
+def update_worklist():
+    new_select = initialise_worklist_select("choose_worklist")
+    worklist_select.options = new_select.options
+
 ##############################################################################
 # Get individual components
 ##############################################################################
@@ -148,7 +153,7 @@ def initialise_worklist_select(called_from):
 def refresh_worklist_select():
     """Refresh the worklist select component"""
     global worklist_select
-    new_select = initialise_worklist_select()
+    new_select = initialise_worklist_select("choose_worklist")
     worklist_select.options = new_select.options
     template.modal.close()
 
@@ -213,17 +218,7 @@ template.sidebar.append(orders_for_patient_form(
     update_callback=update_orders_display  
 ))
 
-btn_new_worklist = pn.widgets.Button(
-    name="New work list",
-    button_type="primary",
-    icon="clipboard-list",
-    sizing_mode="scale_width",
-)
-btn_new_worklist.on_click(open_worklist_form)
 
-template.sidebar.append(pn.Spacer(height=50))
-
-template.sidebar.append(btn_new_worklist)
 
 ##############################################################################
 # MAIN
@@ -257,18 +252,31 @@ main_content = pn.Column(
     orders_table_placeholder, pn.Row(btn_mark_as_completed, btn_remove_from_worklist,btn_add_to_worklist)
 )
 
+#######################################################################################
+#Worklist Management Tab
+#######################################################################################
+
 # Create worklist management content
+btn_new_worklist = pn.widgets.Button(
+    name="New work list",
+    button_type="primary",
+    icon="clipboard-list",
+
+)
+btn_new_worklist.on_click(open_worklist_form)
+
+
+
+
+
+
+
 worklist_select_for_unsubscribe = initialise_worklist_select("unsubscribe_worklist")
-worklist_management = pn.Column(
+worklist_management = pn.Row(pn.Column("Create a new Worklist",btn_new_worklist),pn.Column(
     "Select a worklist to unsubscribe from:",
     worklist_select_for_unsubscribe
-)
+))
 
-
-worklist_select.param.watch(
-    unsubscribe_worklist,
-    parameter_names="value"
-)
 
 
 tabs = pn.Tabs(

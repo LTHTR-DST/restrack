@@ -20,6 +20,8 @@ from restrack.config import API_URL
 from param.parameterized import Event
 
 
+
+
 def create_worklist_form(user_id: int, refresh_callback=None):
     """
     Creates a form for creating a new worklist.
@@ -115,6 +117,7 @@ def unsubscribe_worklist(event: Event):
         r = requests.delete(f"{API_URL}/unsubscribe_worklist/{unsubscribe_worklist}")
         if r.status_code == 200:
             print(r)
+          
             return r
     print("error")
     return False
