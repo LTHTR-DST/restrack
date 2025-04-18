@@ -23,7 +23,7 @@ import json
 import panel as pn
 from restrack.ui.remove_order_from_worklist import remove_order_from_worklist
 from restrack.ui.user_components import create_user_form
-from restrack.ui.worklist_components import create_worklist_form, display_worklist, unsubscribe_worklist
+from restrack.ui.worklist_components import create_worklist_form, display_available_worklists, display_worklist, unsubscribe_worklist
 from restrack.ui.order_components import display_orders
 from restrack.ui.orders_for_patient_form import orders_for_patient_form
 import requests
@@ -267,12 +267,12 @@ btn_new_worklist.on_click(open_worklist_form)
 
 
 
-
-
-
-
 worklist_select_for_unsubscribe = initialise_worklist_select("unsubscribe_worklist")
-worklist_management = pn.Row(pn.Column("Create a new Worklist",btn_new_worklist),pn.Column(
+
+
+worklist_select_for_subscribe=display_available_worklists()
+
+worklist_management = pn.Row(pn.Column("Create a new Worklist",btn_new_worklist),pn.Column("Select an existing worklist to subscribe to:", worklist_select_for_subscribe),pn.Column(
     "Select a worklist to unsubscribe from:",
     worklist_select_for_unsubscribe
 ))

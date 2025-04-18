@@ -7,7 +7,7 @@ import logging
 import pyodbc
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlmodel import Session, SQLModel, and_, create_engine, select, text
+from sqlmodel import Session, SQLModel, and_, or_, create_engine, select, text
 
 from restrack.models.worklist import (
     OrderWorkList,
@@ -331,6 +331,51 @@ def get_user_worklists(user_id: int, local_session: Session = Depends(get_app_db
             detail=f"Internal server error while fetching worklists: {str(e)}"
         )
 
+@app.get("/worklists/all_unsubscribed/{user_id}", response_model=List[WorkList])
+def get_unsubscribed_worklists(user_id: int, local_session: Session = Depends(get_app_db_session)):
+ 
+    """
+    Retrieve worklists associated with a specific user.
+    """
+    try:
+        logger.debug(f"Fetching worklists for user {user_id}")
+        
+        # First verify the user exists
+        user = local_session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get worklists using a join operation
+        statement = (
+            select(WorkList)
+            .outerjoin(UserWorkList, UserWorkList.worklist_id == WorkList.id)
+            .where(or_(UserWorkList.user_id.is_(None), UserWorkList.user_id != user_id))
+        )
+        
+        worklists = local_session.exec(statement).all()
+        logger.debug(f"Found {len(worklists)} worklists for user {user_id}")
+        
+        return worklists
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching worklists for user {user_id}: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error while fetching worklists: {str(e)}"
+        )
+
+
+
+
+
+
+
+
+
+
+
 
 @app.get(path="/worklist_orders/{worklist_id}", response_model=List[ORDER])
 def get_worklist_orders(worklist_id: int, local_session: Session = Depends(get_app_db_session), remote_session: Session = Depends(get_remote_db_session)):
@@ -438,7 +483,7 @@ def delete_worklist(orders_for_removal: str, local_session: Session = Depends(ge
         return orders_to_delete[0] if orders_to_delete else None
     
 
-#under development
+
 @app.delete("/unsubscribe_worklist/{unsubscribe_worklist}", response_model=UserWorkList)
 def unubscribe_worklist(unsubscribe_worklist: str, local_session: Session = Depends(get_app_db_session)):
     """
@@ -465,3 +510,40 @@ def unubscribe_worklist(unsubscribe_worklist: str, local_session: Session = Depe
         
         session.commit()
         return worklist_to_unsubscribe if worklist_to_unsubscribe else None
+    
+
+
+
+    #under development
+
+@app.put("/subscribe_to_worklist/{subscribe_worklist}")
+def create_worklist(subscribe_worklist:str, local_session: Session = Depends(get_app_db_session)):
+    """
+    Create a new worklist in the database.
+    Args:
+     subscribe_worklist- json containing user_id and worklist_id
+        session (Session, optional): The database session dependency.
+    Returns:
+        WorkList: The created worklist.
+
+    """
+    print (subscribe_worklist)
+    subscribe_worklist= json.loads(subscribe_worklist)
+    with local_session as session:
+        try:
+     
+           
+            session.add(UserWorkList(user_id=subscribe_worklist["user_id"], worklist_id=subscribe_worklist["worklist_id"]))
+            session.commit()
+
+            return True
+        
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error subscribing to  worklist: {str(e)}"
+                
+            )
+       
+        

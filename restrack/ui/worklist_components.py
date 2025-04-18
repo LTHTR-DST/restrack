@@ -123,3 +123,51 @@ def unsubscribe_worklist(event: Event):
     return False
 
 
+def display_available_worklists():
+    user_id= pn.state.cache["current_user"]["id"]
+
+    try:
+        url = f"{API_URL}/worklists/all_unsubscribed/{user_id}"
+        print(f"Fetching worklists from: {url}")  # Debug logging
+        
+        r = requests.get(url)
+        r.raise_for_status()
+        worklists = r.json()
+        
+        options = [(wl['id'], wl['name']) for wl in worklists]
+        subscribe_selector= pn.widgets.Select(
+            name='Select Worklist',
+            options=options,
+            width=200
+        )
+
+        subscribe_selector.param.watch(fn=subscribe_worklist, parameter_names="value")
+
+        return subscribe_selector
+
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching worklists: {e}")
+        return pn.widgets.Select(
+            name='Select Worklist',
+            options=[],
+            width=200
+        )
+
+def subscribe_worklist(event):
+    print(f"Worklist selected: {event.new}")  # Debug logging
+    if event.new is None:
+        return
+    worklist_id = event.new[0]
+    if worklist_id:
+        subscribe_worklist= {
+            "user_id": pn.state.cache["current_user"]["id"],
+            "worklist_id": worklist_id,
+        }
+        subscribe_worklist = json.dumps(subscribe_worklist)
+        r = requests.put(f"{API_URL}/subscribe_to_worklist/{subscribe_worklist}")
+        if r.status_code == 200:
+            print(r)
+            return r
+    print("error")
+    return False
