@@ -333,49 +333,41 @@ def get_user_worklists(user_id: int, local_session: Session = Depends(get_app_db
 
 @app.get("/worklists/all_unsubscribed/{user_id}", response_model=List[WorkList])
 def get_unsubscribed_worklists(user_id: int, local_session: Session = Depends(get_app_db_session)):
- 
     """
-    Retrieve worklists associated with a specific user.
+    Retrieve worklists that the user is not subscribed to.
     """
     try:
-        logger.debug(f"Fetching worklists for user {user_id}")
+        logger.debug(f"Fetching unsubscribed worklists for user {user_id}")
         
         # First verify the user exists
         user = local_session.get(User, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Get worklists using a join operation
+        # Get worklists that the user is not subscribed to using a LEFT JOIN
         statement = (
             select(WorkList)
-            .outerjoin(UserWorkList, UserWorkList.worklist_id == WorkList.id)
-            .where(or_(UserWorkList.user_id.is_(None), UserWorkList.user_id != user_id))
+            .where(
+                ~WorkList.id.in_(
+                    select(UserWorkList.worklist_id)
+                    .where(UserWorkList.user_id == user_id)
+                )
+            )
         )
         
         worklists = local_session.exec(statement).all()
-        logger.debug(f"Found {len(worklists)} worklists for user {user_id}")
+        logger.debug(f"Found {len(worklists)} unsubscribed worklists for user {user_id}")
         
         return worklists
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error fetching worklists for user {user_id}: {str(e)}", exc_info=True)
+        logger.error(f"Error fetching unsubscribed worklists for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Internal server error while fetching worklists: {str(e)}"
         )
-
-
-
-
-
-
-
-
-
-
-
 
 @app.get(path="/worklist_orders/{worklist_id}", response_model=List[ORDER])
 def get_worklist_orders(worklist_id: int, local_session: Session = Depends(get_app_db_session), remote_session: Session = Depends(get_remote_db_session)):
@@ -485,65 +477,98 @@ def delete_worklist(orders_for_removal: str, local_session: Session = Depends(ge
 
 
 @app.delete("/unsubscribe_worklist/{unsubscribe_worklist}", response_model=UserWorkList)
-def unubscribe_worklist(unsubscribe_worklist: str, local_session: Session = Depends(get_app_db_session)):
+def unsubscribe_worklist(unsubscribe_worklist: str, local_session: Session = Depends(get_app_db_session)):
     """
-   Unsubscribes a user from a worklist
+    Unsubscribe a user from a worklist
     Args:
-     unsubscribe_workists JSON string containing user_id and worklist_id
+        unsubscribe_worklist: JSON string containing user_id and worklist_id
     Returns:
-       the deletd worklist
+        The deleted UserWorkList entry
     """
-    with local_session as session:
-        unsubscribe_worklist= json.loads(unsubscribe_worklist)
-        statement = select(UserWorkList).where(
-            and_(
-               UserWorkList.worklist_id == unsubscribe_worklist["worklist_id"],
-               UserWorkList.user_id == unsubscribe_worklist["user_id"]
-            )
-        )
-        worklist_to_unsubscribe = session.exec(statement).first()
-        
-        if not worklist_to_unsubscribe:
-            raise HTTPException(status_code=404, detail="Orders not found in worklist")
-            
-        session.delete(worklist_to_unsubscribe)
-        
-        session.commit()
-        return worklist_to_unsubscribe if worklist_to_unsubscribe else None
-    
-
-
-
-    #under development
-
-@app.put("/subscribe_to_worklist/{subscribe_worklist}")
-def create_worklist(subscribe_worklist:str, local_session: Session = Depends(get_app_db_session)):
-    """
-    Create a new worklist in the database.
-    Args:
-     subscribe_worklist- json containing user_id and worklist_id
-        session (Session, optional): The database session dependency.
-    Returns:
-        WorkList: The created worklist.
-
-    """
-    print (subscribe_worklist)
-    subscribe_worklist= json.loads(subscribe_worklist)
     with local_session as session:
         try:
-     
-           
-            session.add(UserWorkList(user_id=subscribe_worklist["user_id"], worklist_id=subscribe_worklist["worklist_id"]))
+            unsubscribe_data = json.loads(unsubscribe_worklist)
+            statement = select(UserWorkList).where(
+                and_(
+                    UserWorkList.worklist_id == unsubscribe_data["worklist_id"],
+                    UserWorkList.user_id == unsubscribe_data["user_id"]
+                )
+            )
+            worklist_to_unsubscribe = session.exec(statement).first()
+            
+            if not worklist_to_unsubscribe:
+                raise HTTPException(status_code=404, detail="Subscription not found")
+                
+            session.delete(worklist_to_unsubscribe)
             session.commit()
-
-            return True
-        
+            return worklist_to_unsubscribe
+            
+        except HTTPException:
+            raise
         except Exception as e:
             session.rollback()
             raise HTTPException(
                 status_code=500,
-                detail=f"Error subscribing to  worklist: {str(e)}"
-                
+                detail=f"Error unsubscribing from worklist: {str(e)}"
             )
-       
-        
+
+
+@app.put("/subscribe_to_worklist/{subscribe_worklist}")
+def subscribe_to_worklist(subscribe_worklist:str, local_session: Session = Depends(get_app_db_session)):
+    """
+    Subscribe a user to a worklist.
+    Args:
+        subscribe_worklist: JSON string containing user_id and worklist_id
+        session: Database session
+    Returns:
+        True if successful
+    """
+    subscribe_data = json.loads(subscribe_worklist)
+    with local_session as session:
+        try:
+            # Check if subscription already exists
+            existing = session.exec(
+                select(UserWorkList).where(
+                    and_(
+                        UserWorkList.user_id == subscribe_data["user_id"],
+                        UserWorkList.worklist_id == subscribe_data["worklist_id"]
+                    )
+                )
+            ).first()
+            
+            if existing:
+                return True
+                
+            new_subscription = UserWorkList(
+                user_id=subscribe_data["user_id"], 
+                worklist_id=subscribe_data["worklist_id"]
+            )
+            session.add(new_subscription)
+            session.commit()
+            session.refresh(new_subscription)
+            
+            # Verify the subscription was created
+            created = session.exec(
+                select(UserWorkList).where(
+                    and_(
+                        UserWorkList.user_id == subscribe_data["user_id"],
+                        UserWorkList.worklist_id == subscribe_data["worklist_id"]
+                    )
+                )
+            ).first()
+            
+            if not created:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Subscription failed to create"
+                )
+            
+            return True
+            
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error subscribing to worklist: {str(e)}"
+            )
+

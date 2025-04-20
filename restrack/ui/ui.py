@@ -26,6 +26,7 @@ from restrack.ui.user_components import create_user_form
 from restrack.ui.worklist_components import create_worklist_form, display_available_worklists, display_worklist, unsubscribe_worklist
 from restrack.ui.order_components import display_orders
 from restrack.ui.orders_for_patient_form import orders_for_patient_form
+from restrack.ui.refresh_utils import refresh_worklist_select
 import requests
 from dotenv import find_dotenv, load_dotenv
 from restrack.config import API_URL
@@ -140,30 +141,77 @@ def initialise_worklist_select(called_from):
         worklist_select = display_worklist(current_user.get("id"))
         if worklist_select is None:
             print("Warning: worklist_select is None")  # Debug logging
-            worklist_select = pn.widgets.Select(name="Select Worklist", options=[])
-        if called_from =="choose_worklist":
+            worklist_select = pn.widgets.Select(
+                options=[],
+                name=f"Select Worklist ({called_from})"  # Set name during initialization
+            )
+        else:
+            # Set name during initialization instead of after creation
+            worklist_select = pn.widgets.Select(
+                options=worklist_select.options,
+                name=f"Select Worklist ({called_from})",
+                sizing_mode='stretch_width',
+                min_width=200
+            )
+            
+        if called_from == "choose_worklist":
             worklist_select.param.watch(fn=worklist_selected, parameter_names="value")
         elif called_from == "unsubscribe_worklist":
             worklist_select.param.watch(fn=unsubscribe_worklist, parameter_names="value")
+            
+        return worklist_select
     except Exception as e:
         print(f"Error initializing worklist: {e}")  # Debug logging
-        worklist_select = pn.widgets.Select(name="Select Worklist", options=[])
-    return worklist_select
+        return pn.widgets.Select(
+            options=[],
+            name=f"Select Worklist ({called_from})"  # Set name during initialization
+        )
 
-def refresh_worklist_select():
-    """Refresh the worklist select component"""
-    global worklist_select
-    new_select = initialise_worklist_select("choose_worklist")
-    worklist_select.options = new_select.options
+def refresh_callback():
+    """Refresh callback for modal operations"""
+    # Refresh all worklist selectors
+    refresh_worklist_select(worklist_select)
+    refresh_worklist_select(worklist_select_for_unsubscribe)
+    
+    # Get fresh subscription data and update component
+    if 'subscription_container' in pn.state.cache:
+        new_subscription_component = display_available_worklists()
+        subscription_component.clear()
+        subscription_component.extend(new_subscription_component)
+        
+        # Force UI update
+        pn.state.curdoc.hold()
+        try:
+            if hasattr(subscription_component[0], '_events'):
+                subscription_component[0].param.trigger('options')
+                subscription_component[0].param.trigger('value')
+        finally:
+            pn.state.curdoc.unhold()
+    
+    # Clear any cached data related to the current worklist
+    if "Worklist_id" in pn.state.cache:
+        del pn.state.cache["Worklist_id"]
+    if "current_table" in pn.state.cache:
+        del pn.state.cache["current_table"]
+    orders_table_placeholder.clear()
     template.modal.close()
 
-
-
-# Create initial worklist select
+# Create initial worklist components
 worklist_select = initialise_worklist_select("choose_worklist")
+worklist_select_for_unsubscribe = initialise_worklist_select("unsubscribe_worklist")
+
+# Initialize subscription selector with explicit value=None
+worklist_select_for_subscribe = display_available_worklists()
+if worklist_select_for_subscribe is not None:
+    worklist_select_for_subscribe.value = None
+
+# Store selectors in state cache for global access
+pn.state.cache["worklist_select"] = worklist_select
+pn.state.cache["worklist_select_for_unsubscribe"] = worklist_select_for_unsubscribe
+pn.state.cache["worklist_select_for_subscribe"] = worklist_select_for_subscribe
 
 # Create worklist form with refresh callback
-worklist_form = create_worklist_form(current_user.get("id"), refresh_callback=refresh_worklist_select)
+worklist_form = create_worklist_form(current_user.get("id"), refresh_callback=refresh_callback)
 
 # Initialize orders table with empty or default view
 orders_table_placeholder = pn.Row()
@@ -210,7 +258,6 @@ template.sidebar.append(pn.layout.Divider())
 template.sidebar.append("## Worklists")
 
 template.sidebar.append(worklist_select)
-
 
 template.sidebar.append(pn.layout.Divider())
 template.sidebar.append("Show available orders for a patient")
@@ -261,21 +308,23 @@ btn_new_worklist = pn.widgets.Button(
     name="New work list",
     button_type="primary",
     icon="clipboard-list",
-
 )
 btn_new_worklist.on_click(open_worklist_form)
 
+# Get subscription component
+
+subscription_component = display_available_worklists()
+  
 
 
-worklist_select_for_unsubscribe = initialise_worklist_select("unsubscribe_worklist")
-
-
-worklist_select_for_subscribe=display_available_worklists()
-
-worklist_management = pn.Row(pn.Column("Create a new Worklist",btn_new_worklist),pn.Column("Select an existing worklist to subscribe to:", worklist_select_for_subscribe),pn.Column(
-    "Select a worklist to unsubscribe from:",
-    worklist_select_for_unsubscribe
-))
+worklist_management = pn.Row(
+    pn.Column("Create a new Worklist", btn_new_worklist),
+    pn.Column("Select an existing worklist to subscribe to:", subscription_component),
+    pn.Column(
+        "Select a worklist to unsubscribe from:",
+        worklist_select_for_unsubscribe
+    )
+)
 
 
 
