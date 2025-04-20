@@ -156,8 +156,6 @@ def unsubscribe_worklist(event: Event):
                 
                 # Force a UI refresh
                 display_available_worklists()
-              
-               
                 pn.state.curdoc.hold()
                 pn.state.curdoc.unhold()
                 return True

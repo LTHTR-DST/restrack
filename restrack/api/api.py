@@ -368,6 +368,34 @@ def get_unsubscribed_worklists(user_id: int, local_session: Session = Depends(ge
             status_code=500,
             detail=f"Internal server error while fetching worklists: {str(e)}"
         )
+    
+
+@app.get("/worklists/all/", response_model=List[WorkList])
+def get_unsubscribed_worklists(local_session: Session = Depends(get_app_db_session)):
+    """
+    Retrieve all worklists - for use with admin delete function.
+    """
+    try:
+        logger.debug(f"Fetching all worklists")
+      
+        # Get worklists that the user is not subscribed to using a LEFT JOIN
+        statement = (
+            select(WorkList)
+           
+        )
+        
+        worklists = local_session.exec(statement).all()
+        logger.debug(f"Found {len(worklists)} worklists ")
+        
+        return worklists
+    except Exception as e:
+        logger.error(f"Error fetching all worklists: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error while fetching worklists: {str(e)}"
+        )
+        
+   
 
 @app.get(path="/worklist_orders/{worklist_id}", response_model=List[ORDER])
 def get_worklist_orders(worklist_id: int, local_session: Session = Depends(get_app_db_session), remote_session: Session = Depends(get_remote_db_session)):
@@ -572,3 +600,51 @@ def subscribe_to_worklist(subscribe_worklist:str, local_session: Session = Depen
                 detail=f"Error subscribing to worklist: {str(e)}"
             )
 
+
+@app.delete("/delete_worklist/{worklist_to_delete}")
+def delete_worklist(worklist_to_delete: int, local_session: Session = Depends(get_app_db_session)):
+    """
+    COMPLETELY DELETE A WORKLIST FROM THE DATABASE
+    
+    Args:
+        worklist_to_delete: ID of the worklist to delete
+    Returns:
+        dict: Status message
+    """
+    with local_session as session:
+        try:
+            # First delete all user associations
+            statement = select(UserWorkList).where(
+                UserWorkList.worklist_id == worklist_to_delete)
+            user_entries = session.exec(statement).all()
+            for entry in user_entries:
+                session.delete(entry)
+            
+            # Then delete all order associations
+            statement = select(OrderWorkList).where(
+                OrderWorkList.worklist_id == worklist_to_delete)
+            order_entries = session.exec(statement).all()
+            for entry in order_entries:
+                session.delete(entry)
+            
+            # Finally delete the worklist itself
+            statement = select(WorkList).where(
+                WorkList.id == worklist_to_delete)
+            worklist = session.exec(statement).first()
+            
+            if not worklist:
+                raise HTTPException(status_code=404, detail="Worklist not found")
+                
+            session.delete(worklist)
+            session.commit()
+            
+            return {"status": "success", "message": f"Worklist {worklist_to_delete} deleted"}
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error deleting worklist: {str(e)}"
+            )

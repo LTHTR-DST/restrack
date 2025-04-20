@@ -22,6 +22,7 @@ Usage:
 import json
 import panel as pn
 from restrack.ui.remove_order_from_worklist import remove_order_from_worklist
+from restrack.ui.remove_worklist import display_worklist_for_delete, remove_worklist_function
 from restrack.ui.user_components import create_user_form
 from restrack.ui.worklist_components import create_worklist_form, display_available_worklists, display_worklist, unsubscribe_worklist
 from restrack.ui.order_components import display_orders
@@ -158,8 +159,8 @@ def initialise_worklist_select(called_from):
             worklist_select.param.watch(fn=worklist_selected, parameter_names="value")
         elif called_from == "unsubscribe_worklist":
             worklist_select.param.watch(fn=unsubscribe_worklist, parameter_names="value")
-            
         return worklist_select
+    
     except Exception as e:
         print(f"Error initializing worklist: {e}")  # Debug logging
         return pn.widgets.Select(
@@ -316,7 +317,6 @@ btn_new_worklist.on_click(open_worklist_form)
 subscription_component = display_available_worklists()
   
 
-
 worklist_management = pn.Row(
     pn.Column("Create a new Worklist", btn_new_worklist),
     pn.Column("Select an existing worklist to subscribe to:", subscription_component),
@@ -335,9 +335,12 @@ tabs = pn.Tabs(
 )
 
 # Admin content
+remove_worklist = display_worklist_for_delete()
+
+
 if pn.state.user == "admin":
-    admin_content = pn.Row()
-    admin_content.append(user_form)
+    admin_content = pn.Row(pn.Column("Add New User:",user_form),pn.Column("Delete a Worklist:- Warning this will completely destry that worklist!!!",remove_worklist))
+  
     tabs.append(("Admin", admin_content))
 
 
