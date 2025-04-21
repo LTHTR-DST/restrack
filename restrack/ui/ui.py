@@ -114,10 +114,23 @@ def add_to_worklist(event):
         if r.status_code == 200:
             # Refresh the display
             pn.state.cache["current_table"] = display_orders(worklist_id)
-            orders_table_placeholder.clear()
-            orders_table_placeholder.append(pn.state.cache["current_table"])
-            return True
+            refresh_list()
+
+       
     return False
+
+def refresh_list(): 
+        if "Worklist_id" in pn.state.cache:
+            worklist_id = pn.state.cache["Worklist_id"] 
+        elif worklist_id:
+            worklist_id=worklist_id
+        else:
+            print("Worklist ID is None")
+
+        pn.state.cache["current_table"] = display_orders(worklist_id)  
+        orders_table_placeholder.clear()
+        orders_table_placeholder.append(pn.state.cache["current_table"])
+        return True
 
 def remove_order_from_worklist_event(event):
     print("about to call remove order called", pn.state.cache["current_table"])
@@ -131,6 +144,62 @@ def update_worklist():
     new_select = initialise_worklist_select("choose_worklist")
     worklist_select.options = new_select.options
 
+def user_status_select():
+    """generates selector component for user to select and processing action"""
+   
+    actions=[
+        "Secretary seen",
+        "Clinician notified",
+        "Action taken by clinician",
+        "No action required",  
+        "Awaiting advice from another clinician",
+        "Awaiting MDT outcome",
+        "All actions complete"
+    ]
+
+    user_actions = pn.widgets.Select(
+        options=actions,
+        name="User_actions",
+        value=None 
+    )
+    
+    
+    user_actions.param.watch(
+        lambda event: save_user_action(event.new), 
+        parameter_names="value"
+    )
+    return user_actions
+
+def save_user_action(selected_action: str):
+    """
+    Save the user action for selected orders
+    Args:
+        selected_action: The action selected from the dropdown
+    Returns:
+        bool: True if successful, False otherwise
+    """
+ 
+    if not selected_action:
+        return False
+        
+    if "current_table" in pn.state.cache: 
+        selection = pn.state.cache["current_table"].selected_dataframe
+        order_ids = selection["order_id"].tolist()
+        
+        orders_to_comment = {
+            "action": selected_action,
+            "order_ids": order_ids
+        }
+        orders_to_comment = json.dumps(orders_to_comment)
+        r = requests.put(f"{API_URL}/comment_orders/{orders_to_comment}")
+        if r.status_code == 200:
+            # Refresh the display
+            refresh_list()
+            print("Comment added to the order")
+            return True
+        else:
+            print (f"Uodating status failed{r.status_code}")
+            return False
 ##############################################################################
 # Get individual components
 ##############################################################################
@@ -297,7 +366,7 @@ btn_add_to_worklist=pn.widgets.Button(
 btn_add_to_worklist.on_click(add_to_worklist)  
 
 main_content = pn.Column(
-    orders_table_placeholder, pn.Row(btn_mark_as_completed, btn_remove_from_worklist,btn_add_to_worklist)
+    orders_table_placeholder, pn.Row(btn_mark_as_completed, btn_remove_from_worklist,btn_add_to_worklist,pn.Column("Select orders to comment then choose comment from list", user_status_select()))
 )
 
 #######################################################################################

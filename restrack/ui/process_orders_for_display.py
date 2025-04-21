@@ -10,7 +10,9 @@ def process_orders_for_display(df):
                     "in_progress",
                     "partial",
                     "complete",
-                    "supplemental"]]
+                    "supplemental",
+                    "status"
+                    ]]
     
     
                     
@@ -32,7 +34,9 @@ def process_orders_for_display(df):
                         "proc_name":"Investigation",
                         "current_status":"Status",
                         "order_datetime":"Ordered",
-                        "in_progress": "In progress"
+                        "in_progress": "In progress",
+                        "status":"User Action"
+                        
                     },inplace=True)
     
     tbl = pn.widgets.Tabulator(

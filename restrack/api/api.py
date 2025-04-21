@@ -397,17 +397,22 @@ def get_unsubscribed_worklists(local_session: Session = Depends(get_app_db_sessi
         
    
 
-@app.get(path="/worklist_orders/{worklist_id}", response_model=List[ORDER])
+@app.get(path="/worklist_orders/{worklist_id}", response_model=tuple[List[ORDER], List[tuple[int, str]]])
 def get_worklist_orders(worklist_id: int, local_session: Session = Depends(get_app_db_session), remote_session: Session = Depends(get_remote_db_session)):
     """
     Fetches orders associated with a specific worklist.
     """
     with local_session as local:
-        statement = select(OrderWorkList.order_id).where(
+        statement = select(OrderWorkList.order_id,OrderWorkList.status).where(
             OrderWorkList.worklist_id == worklist_id
         )
 
-    order_ids = local.exec(statement).fetchall()
+    order_ids_and_status = local.exec(statement).fetchall()
+    order_ids = []
+    for order in order_ids_and_status:
+        order_ids.append(order[0])
+        print(order_ids)
+    
 
     if not order_ids:
         return []
@@ -420,7 +425,7 @@ def get_worklist_orders(worklist_id: int, local_session: Session = Depends(get_a
             for row in result:
                 results.append(row)
     
-            return results
+            return (results, order_ids_and_status)
 
     except Exception as e:
         logger.error(f"Error fetching orders: {str(e)}")
@@ -648,3 +653,32 @@ def delete_worklist(worklist_to_delete: int, local_session: Session = Depends(ge
                 status_code=500,
                 detail=f"Error deleting worklist: {str(e)}"
             )
+
+
+@app.put("/comment_orders/{orders_to_comment}")
+def comment_orders(orders_to_comment: str, local_session: Session = Depends(get_app_db_session)):
+    """
+    Adds a user comment on status of investigation to an order record
+      orders_to_comment = {
+            "action": selected_action,
+            "order_ids": order_ids
+        }
+    """
+    comment = json.loads(orders_to_comment)
+    with local_session as session:
+        try:
+            for order_id in comment["order_ids"]:
+                statement = select(OrderWorkList).where(OrderWorkList.order_id == order_id)
+                order = session.exec(statement).first() 
+                if order:
+                    order.status = comment["action"]
+            session.commit()  
+            return True
+        
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to update order status: {str(e)}"
+            )
+
