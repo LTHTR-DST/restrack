@@ -471,7 +471,9 @@ async def update_worklist(orders_to_add, local_session: Session = Depends(get_ap
     
     try:
         for order_id in order_ids:
-            local_session.add(OrderWorkList(order_id=order_id, worklist_id=worklist_id))
+            alread_in_bd = local_session.get(OrderWorkList(order_id=order_id, worklist_id=worklist_id))
+            if not alread_in_bd:
+                local_session.add(OrderWorkList(order_id=order_id, worklist_id=worklist_id))
         local_session.commit()
         return True
     except:
@@ -669,9 +671,12 @@ def comment_orders(orders_to_comment: str, local_session: Session = Depends(get_
         try:
             for order_id in comment["order_ids"]:
                 statement = select(OrderWorkList).where(OrderWorkList.order_id == order_id)
-                order = session.exec(statement).first() 
-                if order:
-                    order.status = comment["action"]
+                #this ensures that the comment is added to all worklists - without this comment was only added to first entry in db
+                #endpoint could be altered to take current worklist and only comment that if required but I think adding comments to all worklists is better
+                orders = session.exec(statement).all() 
+                if orders:
+                    for order in orders:
+                        order.status = comment["action"]
             session.commit()  
             return True
         

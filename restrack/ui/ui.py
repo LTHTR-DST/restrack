@@ -68,11 +68,11 @@ def worklist_selected(event: Event):
     print(f"Worklist selected: {event.new}")  # Debug logging
     if event.new is None:
         return
-    worklist_id = event.new[0]
-    pn.state.cache["Worklist_id"]=worklist_id
+    pn.state.cache["Worklist_id"] = event.new[0]
+    
 
     try:
-        pn.state.cache["current_table"] = display_orders(worklist_id)
+        pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"])
         orders_table_placeholder.clear()
         orders_table_placeholder.append(pn.state.cache["current_table"])
     except Exception as e:
@@ -104,33 +104,29 @@ def add_to_worklist(event):
     if "current_table" in pn.state.cache and "Worklist_id" in pn.state.cache:
         selection = pn.state.cache["current_table"].selected_dataframe
         order_ids = selection["order_id"].tolist()
-        worklist_id = pn.state.cache["Worklist_id"]
         orders_to_add = {
-            "worklist_id": worklist_id,
+            "worklist_id":   pn.state.cache["Worklist_id"],
             "order_ids": order_ids
         }
         orders_to_add = json.dumps(orders_to_add)
         r = requests.put(f"{API_URL}/add_to_worklist/{orders_to_add}")
         if r.status_code == 200:
             # Refresh the display
-            pn.state.cache["current_table"] = display_orders(worklist_id)
+            pn.state.cache["current_table"] = display_orders(  pn.state.cache["Worklist_id"])
             refresh_list()
 
        
     return False
 
 def refresh_list(): 
-        if "Worklist_id" in pn.state.cache:
-            worklist_id = pn.state.cache["Worklist_id"] 
-        elif worklist_id:
-            worklist_id=worklist_id
-        else:
+        if "Worklist_id" not in pn.state.cache:
             print("Worklist ID is None")
+        else:
 
-        pn.state.cache["current_table"] = display_orders(worklist_id)  
-        orders_table_placeholder.clear()
-        orders_table_placeholder.append(pn.state.cache["current_table"])
-        return True
+            pn.state.cache["current_table"] = display_orders(  pn.state.cache["Worklist_id"])  
+            orders_table_placeholder.clear()
+            orders_table_placeholder.append(pn.state.cache["current_table"])
+            return True
 
 def remove_order_from_worklist_event(event):
     print("about to call remove order called", pn.state.cache["current_table"])
@@ -184,7 +180,10 @@ def save_user_action(selected_action: str):
         
     if "current_table" in pn.state.cache: 
         selection = pn.state.cache["current_table"].selected_dataframe
+        print("***********************************************************************")
+        print(selection)
         order_ids = selection["order_id"].tolist()
+        print(order_ids)
         
         orders_to_comment = {
             "action": selected_action,
@@ -287,6 +286,7 @@ worklist_form = create_worklist_form(current_user.get("id"), refresh_callback=re
 orders_table_placeholder = pn.Row()
 if worklist_select.value is not None:
     pn.state.cache["current_table"]=display_orders(worklist_select.value[0])
+    pn.state.cache["Worklist_id"] = worklist_select.value[0]
     orders_table_placeholder.append(pn.state.cache["current_table"])
 
 # Setup template
