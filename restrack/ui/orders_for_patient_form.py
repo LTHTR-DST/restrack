@@ -15,22 +15,36 @@ def orders_for_patient_form(update_callback=None):
                     update_callback("Please enter a patient ID")
                 return
             
-            patient_id=int(patient_id)  
+            patient_id = int(patient_id)  
             response = requests.get(f"{API_URL}/orders_for_patient/{patient_id}")
             if response.status_code == 200:
-                orders = response.json()
-                if not orders:
-                    if update_callback:
-                        update_callback("No orders found for this patient")
-                    return
-                print(orders)
-                df = pd.DataFrame(orders)  
-                table = process_orders_for_display(df)  
+                orders_data, status_data = response.json()  # The API returns a tuple of (orders, statuses)
+                
+                # Convert to dataframes
+                orders_df = pd.DataFrame(orders_data)
+                status_df = pd.DataFrame(status_data, columns=['order_id', 'status'])
+                
+                # Merge the dataframes on order_id
+                merged_df = pd.merge(orders_df, status_df, on='order_id', how='left')
+                
+                # Process and display
+                table = process_orders_for_display(merged_df)
                 if update_callback:
                     update_callback(table)
             else:
+                # Extract error message from response
+                try:
+                    error_data = response.json()
+                    error_message = error_data.get('detail', f"Error: {response.status_code}")
+                except:
+                    error_message = f"Error: {response.status_code}"
+                    
                 if update_callback:
-                    update_callback(f"Error: {response.status_code}")
+                    update_callback(error_message)
+                    
+        except ValueError:
+            if update_callback:
+                update_callback("Please enter a valid patient ID number")
         except Exception as e:
             if update_callback:
                 update_callback(f"Error: {str(e)}")

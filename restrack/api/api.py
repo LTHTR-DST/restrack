@@ -434,51 +434,90 @@ def get_worklist_orders(worklist_id: int, local_session: Session = Depends(get_a
             detail=f"Internal server error: {str(e)}"
         )
 
-
-@app.get(path="/orders_for_patient/{patient_id}", response_model=List[ORDER])
-def get_worklist_orders(patient_id: int,  remote_session: Session = Depends(get_remote_db_session)):
+@app.get(path="/orders_for_patient/{patient_id}", response_model=tuple[List[ORDER], List[tuple[int, str]]])
+def get_patient_orders(patient_id: int, local_session: Session = Depends(get_app_db_session), remote_session: Session = Depends(get_remote_db_session)):
     """
     Fetches orders all orders for a specific patient
     """
-   
     try:
         with remote_session as remote:
-            statement = select(ORDER).where(ORDER.patient_id == patient_id, ORDER.cancelled == None)
+            # First check if patient exists by counting matching records
+            patient_check = select(ORDER.patient_id).where(ORDER.patient_id == patient_id)
+            patient_exists = remote.exec(patient_check).first()
+            
+            if not patient_exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Patient not found"
+                )
+
+            statement = select(ORDER).where(ORDER.patient_id == patient_id, ORDER.cancelled == None).order_by(ORDER.event_datetime.desc())
             result = remote.exec(statement)
             results = []
             for row in result:
-                results.append(row)
-    
-            return results
+                results.append(row) 
 
+            # Only check for no investigations after confirming patient exists
+            if len(results) == 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail="There are no investigations recorded for this patient"
+                )
+                
+    except HTTPException as e:
+        # Re-raise HTTP exceptions (like 404) without wrapping them
+        raise e
     except Exception as e:
         logger.error(f"Error fetching orders: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"Internal server error: {str(e)}"
-        )
+            detail=f"External server error: {str(e)}" )       
+        
+    try:                
+        with local_session as local:
+            order_ids_and_status = []
+            if results:
+                for result in results:
+                    order_id = result.order_id
+                    statement = select(OrderWorkList.order_id, OrderWorkList.status).where(
+                        OrderWorkList.order_id == order_id)
+                    status = local.exec(statement).first()
+                  
+                    if status:
+                        order_ids_and_status.append(status)
+    except Exception as e:
+        logger.error(f"Error fetching order statuses: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}" )     
 
-
-#under development
+    return (results, order_ids_and_status)
 
 
 @app.put(path="/add_to_worklist/{orders_to_add}", response_model=bool)
 async def update_worklist(orders_to_add, local_session: Session = Depends(get_app_db_session)):
-  
     orders_to_add = json.loads(orders_to_add)
     worklist_id = orders_to_add['worklist_id']
     order_ids = orders_to_add['order_ids']
     
     try:
         for order_id in order_ids:
-            alread_in_bd = local_session.get(OrderWorkList(order_id=order_id, worklist_id=worklist_id))
-            if not alread_in_bd:
+            # Check if order already exists in worklist
+            statement = select(OrderWorkList).where(
+                and_(
+                    OrderWorkList.order_id == order_id,
+                    OrderWorkList.worklist_id == worklist_id
+                )
+            )
+            existing = local_session.exec(statement).first()
+            if not existing:
                 local_session.add(OrderWorkList(order_id=order_id, worklist_id=worklist_id))
         local_session.commit()
         return True
-    except:
+    except Exception as e:
+        local_session.rollback()
+        logger.error(f"Error adding orders to worklist: {str(e)}")
         return False
-    
 
 
 @app.delete("/remove_order_from_worklist/{orders_for_removal}", response_model=OrderWorkList)
