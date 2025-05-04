@@ -397,13 +397,13 @@ def get_unsubscribed_worklists(local_session: Session = Depends(get_app_db_sessi
         
    
 
-@app.get(path="/worklist_orders/{worklist_id}", response_model=tuple[List[ORDER], List[tuple[int, str]]])
+@app.get(path="/worklist_orders/{worklist_id}", response_model=tuple[List[ORDER], List[tuple[int, str, str]]])
 def get_worklist_orders(worklist_id: int, local_session: Session = Depends(get_app_db_session), remote_session: Session = Depends(get_remote_db_session)):
     """
     Fetches orders associated with a specific worklist.
     """
     with local_session as local:
-        statement = select(OrderWorkList.order_id,OrderWorkList.status).where(
+        statement = select(OrderWorkList.order_id, OrderWorkList.status, OrderWorkList.user_note).where(
             OrderWorkList.worklist_id == worklist_id
         )
 
@@ -434,7 +434,7 @@ def get_worklist_orders(worklist_id: int, local_session: Session = Depends(get_a
             detail=f"Internal server error: {str(e)}"
         )
 
-@app.get(path="/orders_for_patient/{patient_id}", response_model=tuple[List[ORDER], List[tuple[int, str]]])
+@app.get(path="/orders_for_patient/{patient_id}", response_model=tuple[List[ORDER], List[tuple[int, str, str]]])
 def get_patient_orders(patient_id: int, local_session: Session = Depends(get_app_db_session), remote_session: Session = Depends(get_remote_db_session)):
     """
     Fetches orders all orders for a specific patient
@@ -479,7 +479,7 @@ def get_patient_orders(patient_id: int, local_session: Session = Depends(get_app
             if results:
                 for result in results:
                     order_id = result.order_id
-                    statement = select(OrderWorkList.order_id, OrderWorkList.status).where(
+                    statement = select(OrderWorkList.order_id, OrderWorkList.status, OrderWorkList.user_note).where(
                         OrderWorkList.order_id == order_id)
                     status = local.exec(statement).first()
                   
@@ -726,3 +726,31 @@ def comment_orders(orders_to_comment: str, local_session: Session = Depends(get_
                 detail=f"Failed to update order status: {str(e)}"
             )
 
+@app.post("/annotate_worklist_orders/{note_to_add}")
+def anotate_orders(note_to_add: str, local_session: Session = Depends(get_app_db_session)):
+    """
+    Adds a free text note to 
+     note_to_add = {
+            "note_text": selected_action,
+            "order_ids": order_ids
+            "worklist_id"
+        }
+    """
+    note = json.loads(note_to_add)
+    with local_session as session:
+        try:
+            for order_id in note["order_ids"]:
+                statement = select(OrderWorkList).where(and_(OrderWorkList.order_id == order_id, OrderWorkList.worklist_id == note["worklist_id"]))
+                orders = session.exec(statement).all() 
+                if orders:
+                    for order in orders:
+                        order.user_note = note["note_text"]
+            session.commit()  
+            return True
+        
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to update order status: {str(e)}"
+            )

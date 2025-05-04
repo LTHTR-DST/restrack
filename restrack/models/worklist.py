@@ -70,8 +70,9 @@ class OrderWorkList(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     order_id: int
     worklist_id: int = Field(foreign_key="worklist.id")
-    status: int | None = Field(default=0)
+    status: str | None = Field(default="")
     priority: int | None = Field(default=0)
+    user_note:str | None = Field(default="")
 
 
 def create_db_and_tables(engine):

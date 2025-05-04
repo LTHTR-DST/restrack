@@ -19,7 +19,7 @@ def display_worklist(user_id: int):
                 name='Select Worklist',
                 options=[],
                 sizing_mode='stretch_width',
-                min_width=200
+                min_width=300
             )
         
         options = [(wl['id'], wl['name']) for wl in worklists]

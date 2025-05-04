@@ -123,7 +123,7 @@ def refresh_list():
             print("Worklist ID is None")
         else:
 
-            pn.state.cache["current_table"] = display_orders(  pn.state.cache["Worklist_id"])  
+            pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"])  
             orders_table_placeholder.clear()
             orders_table_placeholder.append(pn.state.cache["current_table"])
             return True
@@ -197,7 +197,7 @@ def save_user_action(selected_action: str):
             print("Comment added to the order")
             return True
         else:
-            print (f"Uodating status failed{r.status_code}")
+            print (f"Updating status failed{r.status_code}")
             return False
 ##############################################################################
 # Get individual components
@@ -295,7 +295,67 @@ template = pn.template.MaterialTemplate(
 )
 
 
+def user_note(refresh_callback=None):
+    """
+    Creates a form for adding a user note to orders in a worklist
 
+
+    """
+
+    def submit(event):
+        print("submit has run")
+        if not event:
+            return
+        btn_create.loading = True
+
+        if "current_table" in pn.state.cache and "Worklist_id" in pn.state.cache:
+            selection = pn.state.cache["current_table"].selected_dataframe
+            order_ids = selection["order_id"].tolist()
+            worklist_id = pn.state.cache["Worklist_id"]     
+        
+        try:
+            data = {
+                "note_text": note.value,
+                "order_ids": order_ids, 
+                "worklist_id": worklist_id,
+            }
+
+            note_to_add=json.dumps(data)
+            r = requests.post(
+                f"{API_URL}/annotate_worklist_orders/{note_to_add}"
+               
+            )
+            r.raise_for_status()
+            print(f"note added: {r.json()}") 
+            pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"])
+            orders_table_placeholder.clear()
+            orders_table_placeholder.append(pn.state.cache["current_table"])
+
+
+            if refresh_callback:
+                refresh_callback()
+                
+            clear(event)
+
+        except Exception as e:
+            print(f"Error adding note: {str(e)}")
+        finally:
+            btn_create.loading = False
+
+    def clear(event):
+        if not event:
+            return
+        note.value = ""
+
+        btn_create.loading = False
+
+    note = pn.widgets.TextInput(name="note")
+    btn_create = pn.widgets.Button(name="Submit", button_type="success")
+    btn_create.on_click(submit)
+ 
+
+    note_form = pn.Column(note, pn.Row(btn_create))
+    return note_form
 
 ##############################################################################
 # HEADER
@@ -329,11 +389,24 @@ template.sidebar.append("## Worklists")
 
 template.sidebar.append(worklist_select)
 
+
+
 template.sidebar.append(pn.layout.Divider())
+template.sidebar.append("## Add new Orders")
 template.sidebar.append("Show available orders for a patient")
 template.sidebar.append(orders_for_patient_form(
     update_callback=update_orders_display  
 ))
+
+template.sidebar.append("Select orders from the table to add to your current worklist")
+btn_add_to_worklist=pn.widgets.Button(
+    name="Add to current worklist",
+    button_type="success",
+    description="Click to add selection to current worklist",
+    icon="check",
+)
+btn_add_to_worklist.on_click(add_to_worklist) 
+template.sidebar.append(btn_add_to_worklist)
 
 
 
@@ -357,16 +430,13 @@ btn_remove_from_worklist = pn.widgets.Button(
 )
 btn_remove_from_worklist.on_click(remove_order_from_worklist_event)
 
-btn_add_to_worklist=pn.widgets.Button(
-    name="Add to current worklist",
-    button_type="success",
-    description="Click to add selection to current worklist",
-    icon="check",
-)
-btn_add_to_worklist.on_click(add_to_worklist)  
+ 
+
+status_text = "Select orders then choose status from list"
+note_text = "Select orders and add a user note to current worklist"
 
 main_content = pn.Column(
-    orders_table_placeholder, pn.Row(btn_mark_as_completed, btn_remove_from_worklist,btn_add_to_worklist,pn.Column("Select orders to comment then choose comment from list", user_status_select()))
+    orders_table_placeholder, pn.Row(pn.Column(status_text, user_status_select()),pn.Column (note_text, user_note()),btn_remove_from_worklist)
 )
 
 #######################################################################################
@@ -408,7 +478,7 @@ remove_worklist = display_worklist_for_delete()
 
 
 if pn.state.user == "admin":
-    admin_content = pn.Row(pn.Column("Add New User:",user_form),pn.Column("Delete a Worklist:- Warning this will completely destry that worklist!!!",remove_worklist))
+    admin_content = pn.Row(pn.Column("Add New User:",user_form),pn.Column("Delete a Worklist:- Warning this will completely destroy that worklist!!!",remove_worklist))
   
     tabs.append(("Admin", admin_content))
 

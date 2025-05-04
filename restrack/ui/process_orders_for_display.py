@@ -11,7 +11,8 @@ def process_orders_for_display(df):
                     "partial",
                     "complete",
                     "supplemental",
-                    "status"
+                    "status",
+                    "user_note"
                     ]]
     
     
@@ -35,7 +36,8 @@ def process_orders_for_display(df):
                         "current_status":"Status",
                         "order_datetime":"Ordered",
                         "in_progress": "In progress",
-                        "status":"User Action"
+                        "status":"User Status",
+                        "user_note": "User Note"
                         
                     },inplace=True)
     
