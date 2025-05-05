@@ -754,3 +754,51 @@ def anotate_orders(note_to_add: str, local_session: Session = Depends(get_app_db
                 status_code=500,
                 detail=f"Failed to update order status: {str(e)}"
             )
+        
+
+@app.post("/copy_worklist/{worklist_to_copy}")
+async def copy_worklist(worklist_to_copy: str, local_session: Session = Depends(get_app_db_session)):
+    """
+    Copies another worklist to the current worklist
+    """
+    worklists = json.loads(worklist_to_copy)
+    try:
+        # Get order IDs directly from local database
+        with local_session as local:
+            statement = select(OrderWorkList.order_id,OrderWorkList.status).where(
+                OrderWorkList.worklist_id == worklists["worklist_to_copy_from"]
+            )
+            order_ids=local_session.exec(statement).fetchall()
+        
+
+        if not order_ids:
+            return True  # Nothing to copy
+
+        for order_id in order_ids:
+            # Check if order already exists in worklist
+            statement = select(OrderWorkList).where(
+                and_(
+                    OrderWorkList.order_id == order_id[0],
+                    OrderWorkList.worklist_id == worklists["current_worklist"]
+                )
+            )
+            existing = local_session.exec(statement).first()
+            if not existing:
+                local_session.add(OrderWorkList(
+                    order_id=order_id[0], 
+                    worklist_id=worklists["current_worklist"],
+                    status=order_id[1]
+
+                ))
+        local_session.commit()
+        return True
+
+    except Exception as e:
+        local_session.rollback()
+        logger.error(f"Error copying worklist: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error copying worklist: {str(e)}"
+        )
+
+
