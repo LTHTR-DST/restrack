@@ -22,7 +22,7 @@ def orders_for_patient_form(update_callback=None):
                 
                 # Convert to dataframes
                 orders_df = pd.DataFrame(orders_data)
-                status_df = pd.DataFrame(status_data, columns=['order_id', 'status'])
+                status_df = pd.DataFrame(status_data, columns=['order_id', 'status', 'user_note'])
                 
                 # Merge the dataframes on order_id
                 merged_df = pd.merge(orders_df, status_df, on='order_id', how='left')

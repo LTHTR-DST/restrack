@@ -199,7 +199,6 @@ def create_worklist(worklist: WorkList, local_session: Session = Depends(get_app
     """
     with local_session as session:
         try:
-            print(worklist.model_dump())
             # Check for potential duplicates
             existing_worklist = session.exec(select(WorkList).where(WorkList.name == worklist.name)).first()
             if existing_worklist:
@@ -411,7 +410,7 @@ def get_worklist_orders(worklist_id: int, local_session: Session = Depends(get_a
     order_ids = []
     for order in order_ids_and_status:
         order_ids.append(order[0])
-        print(order_ids)
+     
     
 
     if not order_ids:

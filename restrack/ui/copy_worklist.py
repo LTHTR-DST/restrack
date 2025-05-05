@@ -9,7 +9,7 @@ from restrack.ui.refresh_utils import refresh_worklist_select
 
 
 def display_worklist_for_copy():
-    """Display worklist selector with proper caching"""
+    """Display worklist selector """
     try:
         url = f"{API_URL}/worklists/all/"
         print(f"Fetching worklists")  # Debug logging
