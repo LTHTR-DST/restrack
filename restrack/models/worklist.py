@@ -7,10 +7,19 @@ from pydantic import BaseModel
 
 
 class WorkListRole(str, Enum):
-    DENY = 0
-    READ = 1
-    WRITE = 2
-    ADMIN = 3
+    """Defines the role a user has for a worklist"""
+    DENY = "DENY"
+    READ = "READ" 
+    WRITE = "WRITE"
+    ADMIN = "ADMIN"
+    
+    @classmethod
+    def _missing_(cls, value):
+        """Handle case-insensitive role values"""
+        for member in cls:
+            if member.value.lower() == str(value).lower():
+                return member
+        return None
 
 
 class User(SQLModel, table=True):
