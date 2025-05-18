@@ -3,7 +3,6 @@ import requests
 import json
 from restrack.config import API_URL
 from param.parameterized import Event
-from restrack.ui.display_worklists import display_worklist
 from restrack.ui.order_components import display_orders
 from restrack.ui.refresh_utils import refresh_worklist_select
 

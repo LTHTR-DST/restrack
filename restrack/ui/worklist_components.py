@@ -87,9 +87,9 @@ def display_worklist(user_id: int):
         
         r = requests.get(url)
         r.raise_for_status()
-        worklists = r.json()
+        pn.state.cache["worklists"] = r.json()
         
-        options = [(wl['id'], wl['name']) for wl in worklists]
+        options = [(wl['id'], wl['name']) for wl in  pn.state.cache["worklists"]]
         select = pn.widgets.Select(
             name='Select Worklist',  # Name set during initialization
             options=options,
@@ -155,7 +155,7 @@ def unsubscribe_worklist(event: Event):
                             subscription_component.value = None
                 
                 # Force a UI refresh
-                display_available_worklists()
+                #display_available_worklists()
                 pn.state.curdoc.hold()
                 pn.state.curdoc.unhold()
                 return True

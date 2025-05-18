@@ -3,7 +3,6 @@ from restrack.ui.display_worklists import display_worklist
 
 def refresh_worklist_select(worklist_select):
     """Refresh the worklist select component"""
-    from restrack.ui.display_worklists import display_worklist
     import panel as pn
     
     # Get fresh data

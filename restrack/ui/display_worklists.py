@@ -12,9 +12,11 @@ def display_worklist(user_id: int):
         
         r = requests.get(url)
         r.raise_for_status()
-        worklists = r.json()
+        pn.state.cache["worklists"] = r.json()
+        print("***********************************************************")
+        print("worklists Cached", pn.state.cache["worklists"])
         
-        if not worklists:
+        if not pn.state.cache["worklists"]:
             return pn.widgets.Select(
                 name='Select Worklist',
                 options=[],
@@ -22,7 +24,7 @@ def display_worklist(user_id: int):
                 min_width=300
             )
         
-        options = [(wl['id'], wl['name']) for wl in worklists]
+        options = [(wl['id'], wl['name']) for wl in pn.state.cache["worklists"]]
         # Create a new fresh component
         select = pn.widgets.Select(
             name='Select Worklist',
