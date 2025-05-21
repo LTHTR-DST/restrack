@@ -105,7 +105,7 @@ def add_to_worklist(event):
         selection = pn.state.cache["current_table"].selected_dataframe
         order_ids = selection["order_id"].tolist()
         orders_to_add = {
-            "worklist_id":   pn.state.cache["Worklist_id"],
+            "worklist_id": pn.state.cache["Worklist_id"],
             "order_ids": order_ids
         }
         orders_to_add = json.dumps(orders_to_add)
@@ -200,7 +200,7 @@ user_form = create_user_form()
 
 # Initialize worklist select with current user
 
-def initialise_worklist_select():
+def initialise_worklist_select(Event=Event):
     print("intitialise worklist_select called")
     try:
         worklist_select = display_worklist(current_user.get("id"))
@@ -218,13 +218,13 @@ def initialise_worklist_select():
                 options=[],
                 name="Select Worklist"  # Set name during initialization
             )
+        
     worklist_select.param.watch(fn=worklist_selected, parameter_names="value")
     pn.state.cache["worklist_select"] = worklist_select        
     worklists_placeholder.clear()
     worklists_placeholder.append(pn.state.cache["worklist_select"])
 
 # Create initial worklist components
-#cache_watcher=pn.bind(initialise_worklist_select, pn.state.cache["worklists"], watch=True)
 pn.state.cache["worklists"]=[]
 initialise_worklist_select()
 
@@ -325,7 +325,12 @@ btn_log_out = pn.widgets.Button(
     icon="logout",
     sizing_mode="scale_width",
 )
-
+refresh_button = pn.widgets.Button(
+name="Refresh list",
+button_type="primary",
+icon="IconRefreshDot"
+)
+refresh_button.on_click(initialise_worklist_select)
 btn_log_out.js_on_click(code="""window.location.href = './logout'""")
 template.sidebar.append(btn_log_out)
 
@@ -333,7 +338,7 @@ template.sidebar.append(pn.layout.Divider())
 template.sidebar.append("## Worklists")
 
 template.sidebar.append(worklists_placeholder)
-
+template.sidebar.append(refresh_button)
 template.sidebar.append(pn.layout.Divider())
 template.sidebar.append("## Add new Orders")
 template.sidebar.append("Show available orders for a patient")
