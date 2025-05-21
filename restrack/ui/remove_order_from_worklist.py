@@ -1,7 +1,6 @@
 import json
 import panel as pn
 import requests
-
 from restrack.config import API_URL
 from restrack.ui.order_components import display_orders
 

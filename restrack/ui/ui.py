@@ -21,13 +21,12 @@ Usage:
 
 import json
 import panel as pn
-import param
 from restrack.ui.worklist_cross_selector import worklist_manager
 from restrack.ui.copy_worklist import display_worklist_for_copy
-from restrack.ui.remove_worklist import display_worklist_for_delete
+from restrack.ui.remove_worklist import delete_selector_component, display_worklist_for_delete
 from restrack.ui.remove_order_from_worklist import remove_order_from_worklist
 from restrack.ui.user_components import create_user_form
-from restrack.ui.worklist_components import create_worklist_form,  display_worklist
+from restrack.ui.worklist_components import create_worklist_form, display_worklist
 from restrack.ui.order_components import display_orders
 from restrack.ui.orders_for_patient_form import orders_for_patient_form
 import requests
@@ -228,7 +227,6 @@ def initialise_worklist_select(Event=Event):
 pn.state.cache["worklists"]=[]
 initialise_worklist_select()
 
-
 worklist_form = create_worklist_form(current_user.get("id"))
 
 # Initialize orders table with empty or default view
@@ -272,8 +270,6 @@ def user_note(refresh_callback=None):
             pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"])
             orders_table_placeholder.clear()
             orders_table_placeholder.append(pn.state.cache["current_table"])
-
-
             if refresh_callback:
                 refresh_callback()
                 
@@ -357,7 +353,6 @@ btn_add_to_worklist.on_click(add_to_worklist)
 template.sidebar.append(btn_add_to_worklist)
 
 
-
 ##############################################################################
 # MAIN
 ##############################################################################
@@ -411,7 +406,6 @@ worklist_management = pn.Row(
 )
 
 
-
 tabs = pn.Tabs(
     ("Main", main_content),
     ("Manage worklists", worklist_management),
@@ -419,7 +413,7 @@ tabs = pn.Tabs(
 )
 
 # Admin content
-remove_worklist = display_worklist_for_delete()
+remove_worklist =delete_selector_component()
 
 
 if pn.state.user == "admin":

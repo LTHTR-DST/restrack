@@ -2,40 +2,9 @@ import panel as pn
 import requests
 import json
 from restrack.config import API_URL
-from param.parameterized import Event
 
-
-
-def display_worklist_for_delete():
-    """Display worklist selector with proper caching"""
-    try:
-        url = f"{API_URL}/worklists/all/"
-        print(f"Fetching worklists")  # Debug logging
-        
-        r = requests.get(url)
-        r.raise_for_status()
-        worklists = r.json()
-        
-        options = [(wl['id'], wl['name']) for wl in worklists]
-        delete_select = pn.widgets.Select(
-            name='Select Worklist',  # Name set during initialization
-            options=options,
-            sizing_mode='stretch_width',
-            min_width=200
-        )
-        delete_select.param.watch(fn=remove_worklist_function, parameter_names="value")
-        return delete_select
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching worklists: {e}")
-        return pn.widgets.Select(
-            name='Select Worklist',  # Name set during initialization
-            options=[],
-            sizing_mode='stretch_width',
-            min_width=200
-        )
-
-def remove_worklist_function(event: Event):
-    worklist_id = event.new[0]
+def remove_worklist_function(dropdown_value):
+    worklist_id = dropdown_value
     worklist_id = int(worklist_id)
     print(worklist_id)
     if worklist_id:
@@ -45,6 +14,7 @@ def remove_worklist_function(event: Event):
             r.raise_for_status()
             
             if r.status_code == 200:
+                print("worklist deleted")
             
                 
                 # Update available worklists
@@ -67,3 +37,55 @@ def remove_worklist_function(event: Event):
         except Exception as e:
             print(f"Error in delete_worklist: {str(e)}")
             return False
+
+def display_worklist_for_delete():
+    """Display worklist selector with proper caching"""
+    try:
+        url = f"{API_URL}/worklists/all/"
+        print(f"Fetching worklists")  # Debug logging
+        
+        r = requests.get(url)
+        r.raise_for_status()
+        worklists = r.json()
+        
+
+        options={}
+        for wl in worklists:
+            options.update({ wl['name']:wl['id']})   
+     
+        delete_select = pn.widgets.Select(
+            name='Select Worklist',  # Name set during initialization
+            options=options,
+            sizing_mode='stretch_width',
+            min_width=200
+        )
+        
+        return delete_select
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching worklists: {e}")
+        return pn.widgets.Select(
+            name='Select Worklist',  # Name set during initialization
+            options=[],
+            sizing_mode='stretch_width',
+            min_width=200
+        )
+
+def delete_selector_component():
+    dropdown = display_worklist_for_delete()
+    submit_button = pn.widgets.Button(
+        name="Delete worklist",
+        button_type="danger",
+        description="Click to delete the selected worklist",
+        icon="trash"
+    )
+    
+    def on_button_click(event):
+        print(f"Dropdown value: {dropdown.value}")  # Debug logging
+        if dropdown.value:
+            remove_worklist_function(dropdown.value)
+    
+    submit_button.on_click(on_button_click)
+    component = pn.Column(dropdown, submit_button)
+    return component
+
+
