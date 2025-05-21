@@ -22,8 +22,8 @@ Usage:
 import json
 import panel as pn
 from restrack.ui.worklist_cross_selector import worklist_manager
-from restrack.ui.copy_worklist import display_worklist_for_copy
-from restrack.ui.remove_worklist import delete_selector_component, display_worklist_for_delete
+from restrack.ui.copy_worklist import copy_selector_component
+from restrack.ui.remove_worklist import delete_selector_component
 from restrack.ui.remove_order_from_worklist import remove_order_from_worklist
 from restrack.ui.user_components import create_user_form
 from restrack.ui.worklist_components import create_worklist_form, display_worklist
@@ -397,7 +397,7 @@ btn_new_worklist.on_click(open_worklist_form)
 # Get subscription component
 
 
-copy_selector=display_worklist_for_copy()
+copy_selector=copy_selector_component()
 
 worklist_management = pn.Row(
     pn.Column("Create a new Worklist", btn_new_worklist),
