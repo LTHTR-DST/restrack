@@ -4,7 +4,7 @@ import json
 from restrack.config import API_URL
 from param.parameterized import Event
 from restrack.ui.order_components import display_orders
-from restrack.ui.refresh_utils import refresh_worklist_select
+
 
 
 def display_worklist_for_copy():

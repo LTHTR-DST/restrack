@@ -21,15 +21,15 @@ Usage:
 
 import json
 import panel as pn
+import param
 from restrack.ui.worklist_cross_selector import worklist_manager
 from restrack.ui.copy_worklist import display_worklist_for_copy
-from restrack.ui.remove_worklist import display_worklist_for_delete, remove_worklist_function
+from restrack.ui.remove_worklist import display_worklist_for_delete
 from restrack.ui.remove_order_from_worklist import remove_order_from_worklist
 from restrack.ui.user_components import create_user_form
 from restrack.ui.worklist_components import create_worklist_form,  display_worklist
 from restrack.ui.order_components import display_orders
 from restrack.ui.orders_for_patient_form import orders_for_patient_form
-from restrack.ui.refresh_utils import refresh_worklist_select
 import requests
 from dotenv import find_dotenv, load_dotenv
 from restrack.config import API_URL
@@ -37,7 +37,6 @@ from param.parameterized import Event
 
 
 pn.extension("tabulator")
-
 
 load_dotenv(find_dotenv())
 
@@ -61,12 +60,11 @@ current_user = get_user(pn.state.user)
 pn.state.cache["current_user"] = current_user
 pn.state.cache["worklists"]=[]
 
-
+worklists_placeholder=pn.Row()
 
 ##############################################################################
 # Event Handlers
 ##############################################################################
-
 
 def worklist_selected(event: Event):
     print(f"Worklist selected: {event.new}")  # Debug logging
@@ -89,8 +87,6 @@ def open_worklist_form(event):
     template.modal.clear()
     template.modal.append(worklist_form)
     template.open_modal()
-
-
 
 
 def update_orders_display(new_content):
@@ -140,10 +136,6 @@ def remove_order_from_worklist_event(event):
         orders_table_placeholder.append(pn.state.cache["current_table"])
 
 
-def update_worklist():
-    new_select = initialise_worklist_select("choose_worklist")
-    worklist_select.options = new_select.options
-
 def user_status_select():
     """generates selector component for user to select and processing action"""
    
@@ -162,7 +154,6 @@ def user_status_select():
         name="User_actions",
         value=None 
     )
-    
     
     user_actions.param.watch(
         lambda event: save_user_action(event.new), 
@@ -184,7 +175,6 @@ def save_user_action(selected_action: str):
         
     if "current_table" in pn.state.cache: 
         selection = pn.state.cache["current_table"].selected_dataframe
-        print("***********************************************************************")
         print(selection)
         order_ids = selection["order_id"].tolist()
         print(order_ids)
@@ -209,67 +199,49 @@ def save_user_action(selected_action: str):
 user_form = create_user_form()
 
 # Initialize worklist select with current user
-def initialise_worklist_select(called_from):
+
+def initialise_worklist_select():
+    print("intitialise worklist_select called")
     try:
         worklist_select = display_worklist(current_user.get("id"))
         if worklist_select is None:
             print("Warning: worklist_select is None")  # Debug logging
             worklist_select = pn.widgets.Select(
                 options=[],
-                name=f"Select Worklist ({called_from})"  # Set name during initialization
+                name="Select Worklist"  # Set name during initialization
             )
-        else:
-            # Set name during initialization instead of after creation
-            worklist_select = pn.widgets.Select(
-                options=worklist_select.options,
-                name=f"Select Worklist ({called_from})",
-                sizing_mode='stretch_width',
-                min_width=200
-            )
-            
-        if called_from == "choose_worklist":
-            worklist_select.param.watch(fn=worklist_selected, parameter_names="value")
-        
-        return worklist_select
+
     
     except Exception as e:
         print(f"Error initializing worklist: {e}")  # Debug logging
-        return pn.widgets.Select(
-            options=[],
-            name=f"Select Worklist ({called_from})"  # Set name during initialization
-        )
-
+        worklist_select=pn.widgets.Select(
+                options=[],
+                name="Select Worklist"  # Set name during initialization
+            )
+    worklist_select.param.watch(fn=worklist_selected, parameter_names="value")
+    pn.state.cache["worklist_select"] = worklist_select        
+    worklists_placeholder.clear()
+    worklists_placeholder.append(pn.state.cache["worklist_select"])
 
 # Create initial worklist components
-worklist_select = initialise_worklist_select("choose_worklist")
-worklist_select_for_unsubscribe = initialise_worklist_select("unsubscribe_worklist")
+#cache_watcher=pn.bind(initialise_worklist_select, pn.state.cache["worklists"], watch=True)
+pn.state.cache["worklists"]=[]
+initialise_worklist_select()
 
-# Initialize subscription selector with explicit value=None
-
-
-# Store selectors in state cache for global access
-pn.state.cache["worklist_select"] = worklist_select
 
 worklist_form = create_worklist_form(current_user.get("id"))
 
 # Initialize orders table with empty or default view
 orders_table_placeholder = pn.Row()
-if worklist_select.value is not None:
-    pn.state.cache["current_table"]=display_orders(worklist_select.value[0])
-    pn.state.cache["Worklist_id"] = worklist_select.value[0]
+if pn.state.cache["worklist_select"]:
+    pn.state.cache["current_table"]=display_orders(pn.state.cache["worklist_select"].value[0])
+    pn.state.cache["Worklist_id"] =pn.state.cache["worklist_select"].value[0]
     orders_table_placeholder.append(pn.state.cache["current_table"])
-
-# Setup template
-template = pn.template.MaterialTemplate(
-    title="Results Tracking Portal", site="RESTRACK", theme=pn.template.DefaultTheme
-)
 
 
 def user_note(refresh_callback=None):
     """
     Creates a form for adding a user note to orders in a worklist
-
-
     """
 
     def submit(event):
@@ -323,10 +295,13 @@ def user_note(refresh_callback=None):
     btn_create = pn.widgets.Button(name="Submit", button_type="success")
     btn_create.on_click(submit)
  
-
     note_form = pn.Column(note, pn.Row(btn_create))
     return note_form
 
+# Setup template
+template = pn.template.MaterialTemplate(
+    title="Results Tracking Portal", site="RESTRACK", theme=pn.template.DefaultTheme
+)
 ##############################################################################
 # HEADER
 ##############################################################################
@@ -357,9 +332,7 @@ template.sidebar.append(btn_log_out)
 template.sidebar.append(pn.layout.Divider())
 template.sidebar.append("## Worklists")
 
-template.sidebar.append(worklist_select)
-
-
+template.sidebar.append(worklists_placeholder)
 
 template.sidebar.append(pn.layout.Divider())
 template.sidebar.append("## Add new Orders")

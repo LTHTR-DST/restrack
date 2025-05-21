@@ -3,7 +3,6 @@ import requests
 import panel as pn
 
 from restrack.config import API_URL
-
 def get_all_worklists():
     """Returns list of all worklists"""
     try:
@@ -96,6 +95,7 @@ def refresh_subscribed_worklists():
         # Update the cache with new worklist data
         pn.state.cache["worklists"] = r.json()
         print("Worklists cached:", pn.state.cache["worklists"])
+
 
     except requests.exceptions.RequestException as e:
         print(f"Error fetching worklists: {e}")

@@ -3,8 +3,7 @@ import requests
 import json
 from restrack.config import API_URL
 from param.parameterized import Event
-from restrack.ui.display_worklists import display_worklist
-from restrack.ui.refresh_utils import refresh_worklist_select
+
 
 
 def display_worklist_for_delete():
@@ -46,17 +45,7 @@ def remove_worklist_function(event: Event):
             r.raise_for_status()
             
             if r.status_code == 200:
-                # Refresh all worklist data
-                new_select = display_worklist(pn.state.cache["current_user"]["id"])
-                
-                # Update subscribed worklists
-                if 'worklist_select' in pn.state.cache:
-                    pn.state.cache['worklist_select'].options = new_select.options
-                    pn.state.cache['worklist_select'].value = None
-                    
-                if 'worklist_select_for_unsubscribe' in pn.state.cache:
-                    pn.state.cache['worklist_select_for_unsubscribe'].options = new_select.options
-                    pn.state.cache['worklist_select_for_unsubscribe'].value = None
+            
                 
                 # Update available worklists
                 url = f"{API_URL}/worklists/all_unsubscribed/{pn.state.cache['current_user']['id']}"
