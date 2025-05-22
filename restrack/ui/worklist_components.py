@@ -89,15 +89,18 @@ def display_worklist(user_id: int):
         r.raise_for_status()
         pn.state.cache["worklists"] = r.json()
         
-        options = [(wl['id'], wl['name']) for wl in  pn.state.cache["worklists"]]
+        options = {}
+        for wl in  pn.state.cache["worklists"]:
+            options.update({wl['name']:wl['id']})
+
         select = pn.widgets.Select(
-            name='Select Worklist',  # Name set during initialization
-            options=options,
-            sizing_mode='stretch_width',
-            min_width=200
-        )
+        name='Select Worklist',  # Name set during initialization
+        options=options,
+        sizing_mode='stretch_width',
+        min_width=200)
         
         return select
+    
     except requests.exceptions.RequestException as e:
         print(f"Error fetching worklists: {e}")
         return pn.widgets.Select(

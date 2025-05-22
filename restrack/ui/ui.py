@@ -69,7 +69,7 @@ def worklist_selected(event: Event):
     print(f"Worklist selected: {event.new}")  # Debug logging
     if event.new is None:
         return
-    pn.state.cache["Worklist_id"] = event.new[0]
+    pn.state.cache["Worklist_id"] = event.new
     
 
     try:
@@ -232,8 +232,9 @@ worklist_form = create_worklist_form(current_user.get("id"))
 # Initialize orders table with empty or default view
 orders_table_placeholder = pn.Row()
 if pn.state.cache["worklist_select"]:
-    pn.state.cache["current_table"]=display_orders(pn.state.cache["worklist_select"].value[0])
-    pn.state.cache["Worklist_id"] =pn.state.cache["worklist_select"].value[0]
+    print(pn.state.cache["worklist_select"])
+    pn.state.cache["current_table"]=display_orders(pn.state.cache["worklist_select"].value)
+    pn.state.cache["Worklist_id"] =pn.state.cache["worklist_select"]
     orders_table_placeholder.append(pn.state.cache["current_table"])
 
 
