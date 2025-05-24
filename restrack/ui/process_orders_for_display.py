@@ -43,13 +43,14 @@ def process_orders_for_display(df):
     
     tbl = pn.widgets.Tabulator(
             df_to_view,
-            layout='fit_data_stretch',
+            layout="fit_data_stretch",
             groupby=["patient_id"],
             hidden_columns=["index","order_id", "patient_id"],
             pagination="local",
-            page_size=6,
+            page_size=None,
             selectable="checkbox",
-            disabled=True
+            disabled=True,
+            sizing_mode="scale_both"
     )
 
 

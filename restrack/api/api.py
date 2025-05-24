@@ -646,7 +646,7 @@ def subscribe_to_worklist(subscribe_worklist:str, local_session: Session = Depen
                         detail="Subscription failed to create"
                     )
                 
-                return True
+       
                 
             except Exception as e:
                 session.rollback()
@@ -654,7 +654,7 @@ def subscribe_to_worklist(subscribe_worklist:str, local_session: Session = Depen
                     status_code=500,
                     detail=f"Error subscribing to worklist: {str(e)}"
                 )
-
+    return True
 
 @app.delete("/delete_worklist/{worklist_to_delete}")
 def delete_worklist(worklist_to_delete: int, local_session: Session = Depends(get_app_db_session)):

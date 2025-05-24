@@ -111,7 +111,7 @@ def add_to_worklist(event):
         r = requests.put(f"{API_URL}/add_to_worklist/{orders_to_add}")
         if r.status_code == 200:
             # Refresh the display
-            pn.state.cache["current_table"] = display_orders(  pn.state.cache["Worklist_id"])
+            #pn.state.cache["current_table"] = display_orders( pn.state.cache["Worklist_id"].value)
             refresh_list()
 
        
@@ -122,7 +122,7 @@ def refresh_list():
             print("Worklist ID is None")
         else:
 
-            pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"])  
+            pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"].value)  
             orders_table_placeholder.clear()
             orders_table_placeholder.append(pn.state.cache["current_table"])
             return True
@@ -230,7 +230,7 @@ initialise_worklist_select()
 worklist_form = create_worklist_form(current_user.get("id"))
 
 # Initialize orders table with empty or default view
-orders_table_placeholder = pn.Row()
+orders_table_placeholder = pn.Row(sizing_mode="scale_both")
 if pn.state.cache["worklist_select"]:
     print(pn.state.cache["worklist_select"])
     pn.state.cache["current_table"]=display_orders(pn.state.cache["worklist_select"].value)
@@ -242,56 +242,54 @@ def user_note(refresh_callback=None):
     """
     Creates a form for adding a user note to orders in a worklist
     """
-
     def submit(event):
         print("submit has run")
         if not event:
             return
+        
         btn_create.loading = True
-
-        if "current_table" in pn.state.cache and "Worklist_id" in pn.state.cache:
+        try:
+            if "current_table" not in pn.state.cache or "Worklist_id" not in pn.state.cache:
+                print("No table or worklist selected")
+                return
+                
             selection = pn.state.cache["current_table"].selected_dataframe
             order_ids = selection["order_id"].tolist()
-            worklist_id = pn.state.cache["Worklist_id"]     
-        
-        try:
+            
+            if not order_ids:
+                print("No orders selected")
+                return
+                
+            worklist_id = pn.state.cache["Worklist_id"].value
             data = {
                 "note_text": note.value,
                 "order_ids": order_ids, 
                 "worklist_id": worklist_id,
             }
 
-            note_to_add=json.dumps(data)
+            note_to_add = json.dumps(data)
             r = requests.post(
                 f"{API_URL}/annotate_worklist_orders/{note_to_add}"
-               
             )
             r.raise_for_status()
-            print(f"note added: {r.json()}") 
-            pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"])
+            print(f"note added: {r.json()}")
+            
+            pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"].value)
             orders_table_placeholder.clear()
             orders_table_placeholder.append(pn.state.cache["current_table"])
+            
             if refresh_callback:
                 refresh_callback()
-                
-            clear(event)
 
         except Exception as e:
             print(f"Error adding note: {str(e)}")
         finally:
             btn_create.loading = False
 
-    def clear(event):
-        if not event:
-            return
-        note.value = ""
-
-        btn_create.loading = False
-
     note = pn.widgets.TextInput(name="note")
     btn_create = pn.widgets.Button(name="Submit", button_type="success")
     btn_create.on_click(submit)
- 
+
     note_form = pn.Column(note, pn.Row(btn_create))
     return note_form
 

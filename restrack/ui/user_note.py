@@ -38,7 +38,7 @@ def user_note(refresh_callback=None):
             )
             r.raise_for_status()
             print(f"note added: {r.json()}") 
-            pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"])
+            pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"].value)
 
 
             if refresh_callback:

@@ -13,8 +13,11 @@ def get_all_worklists():
         r.raise_for_status()
         if r.status_code == 200:
             all_worklists = r.json()
-            options = [(wl['id'], wl['name']) for wl in all_worklists]
-            return options
+            value_finder={}
+            for wl in all_worklists:
+                value_finder.update({wl['name']:wl['id']})
+            pn.state.cache["value_finder"] = value_finder
+            return value_finder.keys()
     except requests.exceptions.HTTPError as e:
         print(f"HTTP Error fetching worklists: {e}")
         return []
@@ -101,11 +104,13 @@ def refresh_subscribed_worklists():
         print(f"Error fetching worklists: {e}")
         return []
 
-def update_subscribed_worklists(new_worklists):
+def update_subscribed_worklists(new_worklists_names):
     """generates lists of worklists for new subscribe and unsubscribe based on changes generated in the cross selector widget"""
-    old_subscribed_wl_ids = [wl['id'] for wl in pn.state.cache["worklists"]]
-    if new_worklists:
-        new_worklist_ids = [wl[0] for wl in new_worklists]  # Each item is a tuple of (id, name)
+        
+    if new_worklists_names:
+        old_subscribed_wl_ids = [wl['id'] for wl in pn.state.cache["worklists"]]
+        lookup = pn.state.cache["value_finder"]#caching avoids repeat server call.
+        new_worklist_ids = [lookup.get(name) for name in new_worklists_names]  # Each item is a tuple of (id, name)
         worklists_to_add = list(set(new_worklist_ids) - set(old_subscribed_wl_ids))
         worklists_to_remove = list(set(old_subscribed_wl_ids) - set(new_worklist_ids))
         if worklists_to_add:
@@ -118,8 +123,10 @@ def update_subscribed_worklists(new_worklists):
 
 def worklist_cross_selector():
     """"Generates cross slector widget for subscribe and unsubscribe"""
-    all_worklists = get_all_worklists()
-    subscribed_worklists =  [(wl['id'], wl['name']) for wl in pn.state.cache["worklists"]]
+    all_worklists_keys = get_all_worklists()
+    all_worklists = list(all_worklists_keys)
+  
+    subscribed_worklists =  [wl['name'] for wl in pn.state.cache["worklists"]]
     worklist_cross_selector_widget = pn.widgets.CrossSelector(name='Subscribe and Unsubscribe Worklists', value=subscribed_worklists, 
     options=all_worklists)
 
