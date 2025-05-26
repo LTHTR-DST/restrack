@@ -73,7 +73,7 @@ def worklist_selected(event: Event):
     
 
     try:
-        pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"])
+        pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"].value)
         orders_table_placeholder.clear()
         orders_table_placeholder.append(pn.state.cache["current_table"])
     except Exception as e:
@@ -293,6 +293,16 @@ def user_note(refresh_callback=None):
     note_form = pn.Column(note, pn.Row(btn_create))
     return note_form
 
+
+def refresh(event):
+    initialise_worklist_select()
+    copy_selector_component()
+    set_worklist_management()
+    remove_worklist_placeholder.clear()
+    remove_worklist_placeholder.append(delete_selector_component())
+    
+ 
+    
 # Setup template
 template = pn.template.MaterialTemplate(
     title="Results Tracking Portal", site="RESTRACK", theme=pn.template.DefaultTheme
@@ -325,7 +335,7 @@ name="Refresh list",
 button_type="primary",
 icon="IconRefreshDot"
 )
-refresh_button.on_click(initialise_worklist_select)
+refresh_button.on_click(refresh)
 btn_log_out.js_on_click(code="""window.location.href = './logout'""")
 template.sidebar.append(btn_log_out)
 
@@ -395,28 +405,32 @@ btn_new_worklist.on_click(open_worklist_form)
 
 # Get subscription component
 
+worklists_management_placeholder =pn.Row() 
 
-copy_selector=copy_selector_component()
-
-worklist_management = pn.Row(
+def set_worklist_management():
+    copy_selector=copy_selector_component()
+    worklist_management = pn.Row(
     pn.Column("Create a new Worklist", btn_new_worklist),
     pn.Column("Select an existing worklist to subscribe to:", worklist_manager()),
-    pn.Column("Select a worklist to copy orders from", copy_selector )
-)
+    pn.Column("Select a worklist to copy orders from", copy_selector ))
+    worklists_management_placeholder.clear()
+    worklists_management_placeholder.append(worklist_management)
 
+set_worklist_management()
 
 tabs = pn.Tabs(
     ("Main", main_content),
-    ("Manage worklists", worklist_management),
+    ("Manage worklists", worklists_management_placeholder),
     dynamic=True
 )
 
 # Admin content
-remove_worklist =delete_selector_component()
+remove_worklist_placeholder=""
+remove_worklist_placeholder =delete_selector_component()
 
 
 if pn.state.user == "admin":
-    admin_content = pn.Row(pn.Column("Add New User:",user_form),pn.Column("Delete a Worklist:- Warning this will completely destroy that worklist!!!",remove_worklist))
+    admin_content = pn.Row(pn.Column("Add New User:",user_form),pn.Column("Delete a Worklist:- Warning this will completely destroy that worklist!!!",remove_worklist_placeholder))
   
     tabs.append(("Admin", admin_content))
 

@@ -15,19 +15,6 @@ def remove_worklist_function(dropdown_value):
             
             if r.status_code == 200:
                 print("worklist deleted")
-            
-                
-                # Update available worklists
-                url = f"{API_URL}/worklists/all_unsubscribed/{pn.state.cache['current_user']['id']}"
-                r = requests.get(url)
-                if r.status_code == 200:
-                    worklists = r.json()
-                    unsubscribed_options = [(wl['id'], wl['name']) for wl in worklists]
-                    if 'worklist_select_for_subscribe' in pn.state.cache:
-                        subscription_component = pn.state.cache['worklist_select_for_subscribe']
-                        if isinstance(subscription_component, pn.Column):
-                            subscription_component.options = unsubscribed_options
-                            subscription_component.value = None
                 
                 # Force a UI refresh
                 pn.state.curdoc.hold()
