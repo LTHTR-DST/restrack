@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 DB_RESTRACK = os.getenv("DB_RESTRACK", "sqlite:///restrack.db")
-DB_OMOP = "mssql+pyodbc://LTHDATASCIENCE?driver=ODBC+Driver+17+For+SQL+Server&Trusted_Connection=Yes&Database=promptly"
+DB_OMOP = os.getenv("DB_CDM")
 
 local_engine = create_engine(DB_RESTRACK)
 remote_engine = create_engine(DB_OMOP)
