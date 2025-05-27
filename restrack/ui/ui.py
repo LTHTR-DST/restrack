@@ -73,7 +73,7 @@ def worklist_selected(event: Event):
     
 
     try:
-        pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"].value)
+        pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"])
         orders_table_placeholder.clear()
         orders_table_placeholder.append(pn.state.cache["current_table"])
     except Exception as e:
@@ -122,7 +122,7 @@ def refresh_list():
             print("Worklist ID is None")
         else:
 
-            pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"].value)  
+            pn.state.cache["current_table"] = display_orders(pn.state.cache["Worklist_id"])  
             orders_table_placeholder.clear()
             orders_table_placeholder.append(pn.state.cache["current_table"])
             return True

@@ -1,5 +1,6 @@
 import pandas as pd
 import panel as pn
+from bokeh.models.widgets import HTMLTemplateFormatter
 
 def process_orders_for_display(df):       
     df_to_view = df[["order_id",
@@ -38,8 +39,44 @@ def process_orders_for_display(df):
                         "in_progress": "In progress",
                         "status":"User Status",
                         "user_note": "User Note"
-                        
                     },inplace=True)
+    
+    """ 1	waiting for review
+    10	no show
+    11	supplemental
+    2	data not collected
+    3	scheduled
+    4	in progress
+    5	partial
+    6	complete
+    7	cancelled
+    8	resolved
+    9	entered
+    -1	NA """
+
+    status_format_template = """
+    <b><div style="background:
+        <%= (function colorfromint(){
+            if(Status == 6){
+                return("Green")
+            }
+            else if(Status == 5){
+                return("Yellow")
+            }
+            else if([3,9].includes(Status)){
+                return ("Blue")
+            }
+            else if(Status == 11){
+                return ("Red")
+            }
+            else if(Status  == 1 || Status == -1){
+            return("White")
+            }
+            else {return ("Black")}
+         }()) %>;"> <%= Status %> </div></b>
+    """
+
+    status_formatter = HTMLTemplateFormatter(template=status_format_template)
     
     tbl = pn.widgets.Tabulator(
             df_to_view,
@@ -50,11 +87,16 @@ def process_orders_for_display(df):
             page_size=None,
             selectable="checkbox",
             disabled=True,
+            formatters={"Status": status_formatter},
             sizing_mode="scale_both"
     )
 
 
     return tbl
+
+
+
+
     # def colour_rows(row):
     #     if row["complete"] != "nan":
     #         return ['background-color: green'] * len(row)
