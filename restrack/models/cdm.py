@@ -2,7 +2,6 @@
 
 from datetime import date, datetime
 from typing import Optional
-import os
 from pydantic import ConfigDict
 from sqlmodel import Field, SQLModel
 from pydantic import BaseModel
@@ -565,7 +564,7 @@ class CONCEPT(SQLModel, table=True):
 
 class ORDER(SQLModel, table=True):
     __table_args__ = {"schema": "alan"}
-    __tablename__ = os.getenv("order_table")
+    __tablename__ = "restrack_orders"
     order_id: int = Field(default=None, primary_key=True)
     visit_id: int
     event_id: int
