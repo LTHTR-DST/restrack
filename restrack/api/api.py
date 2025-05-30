@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 DB_RESTRACK = os.getenv("DB_RESTRACK", "sqlite:///restrack.db")
 DB_OMOP = os.getenv("DB_CDM")
-DB_OMOP = os.getenv("DB_CDM")
 
 local_engine = create_engine(DB_RESTRACK)
 remote_engine = create_engine(DB_OMOP)
@@ -55,7 +54,8 @@ def verify_password(username: str, password: str) -> bool:
         with open("data/users.json", "r") as f:
             users = json.load(f)
             return users.get(username) == password
-    except:
+    except Exception as e:
+        logger.error(f"Error verifying password: {str(e)}")
         return False
 
 
@@ -257,7 +257,8 @@ def read_worklist(
         with local_session as session:
             worklist = session.get(WorkList, worklist_id)
         return worklist
-    except:
+    except Exception as e:
+        print(f"Error fetching worklist: {e}")
         raise HTTPException(status_code=404, detail="WorkList not found")
 
 
@@ -292,27 +293,27 @@ def update_worklist(
         return db_worklist
 
 
-@app.delete("/worklists/{worklist_id}", response_model=WorkList)
-def delete_worklist(
-    worklist_id: int, local_session: Session = Depends(get_app_db_session)
-):
-    """
-    Delete a worklist by ID.
-    Args:
-        worklist_id (int): The ID of the worklist to delete.
-        session (Session, optional): The database session dependency. Defaults to Depends(get_session).
-    Returns:
-        WorkList: The deleted worklist.
-    Raises:
-        HTTPException: If the worklist is not found, a 404 error is raised with the message "WorkList not found".
-    """
-    with local_session as session:
-        worklist = session.get(WorkList, worklist_id)
-        if not worklist:
-            raise HTTPException(status_code=404, detail="WorkList not found")
-        session.delete(worklist)
-        session.commit()
-        return worklist
+# @app.delete("/worklists/{worklist_id}", response_model=WorkList)
+# def delete_worklist(
+#     worklist_id: int, local_session: Session = Depends(get_app_db_session)
+# ):
+#     """
+#     Delete a worklist by ID.
+#     Args:
+#         worklist_id (int): The ID of the worklist to delete.
+#         session (Session, optional): The database session dependency. Defaults to Depends(get_session).
+#     Returns:
+#         WorkList: The deleted worklist.
+#     Raises:
+#         HTTPException: If the worklist is not found, a 404 error is raised with the message "WorkList not found".
+#     """
+#     with local_session as session:
+#         worklist = session.get(WorkList, worklist_id)
+#         if not worklist:
+#             raise HTTPException(status_code=404, detail="WorkList not found")
+#         session.delete(worklist)
+#         session.commit()
+#         return worklist
 
 
 @app.get("/worklists/user/{user_id}", response_model=List[WorkList])
@@ -397,7 +398,7 @@ def get_unsubscribed_worklists(
 
 
 @app.get("/worklists/all/", response_model=List[WorkList])
-def get_unsubscribed_worklists(local_session: Session = Depends(get_app_db_session)):
+def get_all_worklists(local_session: Session = Depends(get_app_db_session)):
     """
     Retrieve all worklists - for use with admin delete function.
     """
@@ -447,7 +448,7 @@ def get_worklist_orders(
     try:
         with remote_session as remote:
             statement = select(ORDER).where(
-                ORDER.order_id.in_(order_ids), ORDER.cancelled == None
+                ORDER.order_id.in_(order_ids), ORDER.cancelled is None
             )
             result = remote.exec(statement)
             results = []
@@ -486,7 +487,7 @@ def get_patient_orders(
 
             statement = (
                 select(ORDER)
-                .where(ORDER.patient_id == patient_id, ORDER.cancelled == None)
+                .where(ORDER.patient_id == patient_id, ORDER.cancelled is None)
                 .order_by(ORDER.event_datetime.desc())
             )
             result = remote.exec(statement)
@@ -531,7 +532,7 @@ def get_patient_orders(
 
 
 @app.put(path="/add_to_worklist/{orders_to_add}", response_model=bool)
-async def update_worklist(
+async def add_to_worklist(
     orders_to_add, local_session: Session = Depends(get_app_db_session)
 ):
     orders_to_add = json.loads(orders_to_add)
@@ -563,7 +564,7 @@ async def update_worklist(
 @app.delete(
     "/remove_order_from_worklist/{orders_for_removal}", response_model=OrderWorkList
 )
-def delete_worklist(
+def delete_order_from_worklist(
     orders_for_removal: str, local_session: Session = Depends(get_app_db_session)
 ):
     """
@@ -826,11 +827,11 @@ async def copy_worklist(
     worklists = json.loads(worklist_to_copy)
     try:
         # Get order IDs directly from local database
-        with local_session as local:
+        with local_session as session:
             statement = select(OrderWorkList.order_id, OrderWorkList.status).where(
                 OrderWorkList.worklist_id == worklists["worklist_to_copy_from"]
             )
-            order_ids = local_session.exec(statement).fetchall()
+            order_ids = session.exec(statement).fetchall()
 
         if not order_ids:
             return True  # Nothing to copy
