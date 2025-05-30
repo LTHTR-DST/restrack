@@ -8,11 +8,12 @@ from pydantic import BaseModel
 
 class WorkListRole(str, Enum):
     """Defines the role a user has for a worklist"""
+
     DENY = "DENY"
-    READ = "READ" 
+    READ = "READ"
     WRITE = "WRITE"
     ADMIN = "ADMIN"
-    
+
     @classmethod
     def _missing_(cls, value):
         """Handle case-insensitive role values"""
@@ -81,7 +82,7 @@ class OrderWorkList(SQLModel, table=True):
     worklist_id: int = Field(foreign_key="worklist.id")
     status: str | None = Field(default="")
     priority: int | None = Field(default=0)
-    user_note:str | None = Field(default="")
+    user_note: str | None = Field(default="")
 
 
 def create_db_and_tables(engine):

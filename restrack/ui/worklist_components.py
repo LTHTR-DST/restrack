@@ -17,8 +17,6 @@ import panel as pn
 import requests
 import json
 from restrack.config import API_URL
-from param.parameterized import Event
-
 
 
 def create_worklist_form(user_id: int, refresh_callback=None):
@@ -42,13 +40,11 @@ def create_worklist_form(user_id: int, refresh_callback=None):
             data = {
                 "name": name.value,
                 "description": description.value,
-                "created_by": user_id
+                "created_by": user_id,
             }
             headers = {"Content-Type": "application/json"}
             r = requests.post(
-                f"{API_URL}/worklists/",
-                data=json.dumps(data),
-                headers=headers
+                f"{API_URL}/worklists/", data=json.dumps(data), headers=headers
             )
             r.raise_for_status()
             print(f"Worklist created: {r.json()}")
@@ -84,28 +80,29 @@ def display_worklist(user_id: int):
     try:
         url = f"{API_URL}/worklists/user/{user_id}"
         print(f"Fetching worklists from: {url}")  # Debug logging
-        
+
         r = requests.get(url)
         r.raise_for_status()
         pn.state.cache["worklists"] = r.json()
-        
+
         options = {}
-        for wl in  pn.state.cache["worklists"]:
-            options.update({wl['name']:wl['id']})
+        for wl in pn.state.cache["worklists"]:
+            options.update({wl["name"]: wl["id"]})
 
         select = pn.widgets.Select(
-        name='Select Worklist',  # Name set during initialization
-        options=options,
-        sizing_mode='stretch_width',
-        min_width=200)
-        
+            name="Select Worklist",  # Name set during initialization
+            options=options,
+            sizing_mode="stretch_width",
+            min_width=200,
+        )
+
         return select
-    
+
     except requests.exceptions.RequestException as e:
         print(f"Error fetching worklists: {e}")
         return pn.widgets.Select(
-            name='Select Worklist',  # Name set during initialization
+            name="Select Worklist",  # Name set during initialization
             options=[],
-            sizing_mode='stretch_width',
-            min_width=200
+            sizing_mode="stretch_width",
+            min_width=200,
         )

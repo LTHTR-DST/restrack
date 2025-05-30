@@ -28,7 +28,7 @@ def create_user_form():
             data = dict(
                 username=username.value, email=email.value, password=password.value
             )
-            #print(data.model_dump_json())
+            # print(data.model_dump_json())
             r = requests.post(API_URL + "/users/", data)
 
             if r.status_code != 200:
@@ -67,4 +67,3 @@ def create_user_form():
     user_form = pn.Column(username, email, password, pn.Row(btn_create, btn_clear))
 
     return user_form
-
