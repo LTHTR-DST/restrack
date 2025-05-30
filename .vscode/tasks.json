@@ -4,19 +4,15 @@
         {
             "label": "Panel Development Server",
             "type": "shell",
-            "command": "python -m panel serve ./restrack/ui/ui.py --global-loading-spinner --basic-auth ./data/users.json --cookie-secret restrack_secret --dev ",
+            "command": "python -m panel serve ./restrack/ui/ui.py --global-loading-spinner --basic-auth database --auth-module ./restrack/auth/auth.py --cookie-secret restrack_secret --dev --log-level debug",
             "problemMatcher": [
                 "$python"
             ]
         },
-
         {
             "label": "FastAPI Development Server",
             "type": "shell",
-            "command":  "python -m fastapi dev --port 8000 ./restrack/api/api.py",
-            "problemMatcher": [
-                "$python"
-            ]
+            "command": "python -m fastapi dev --port 8000 ./restrack/api/api.py"
         }
     ]
 }

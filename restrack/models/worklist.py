@@ -34,11 +34,14 @@ class User(SQLModel, table=True):
         created_at (datetime | None): The creation date and time of the user. Defaults to the current datetime.
     """
 
-    id: int | None = Field(default=None, primary_key=True)
-    username: str
+    id: Optional[int] = Field(default=None, primary_key=True)
+    username: str = Field(index=True, unique=True)
     email: str
-    password: str
-    # created_at: datetime | None = Field(default=datetime.today())
+    password: str  # Will store hashed passwords
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_login: Optional[datetime] = None
+    failed_attempts: int = Field(default=0)
+    locked_until: Optional[datetime] = None
 
 
 class WorkList(SQLModel, table=True):

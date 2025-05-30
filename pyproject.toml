@@ -18,6 +18,8 @@ dependencies = [
     "sqlmodel",
     "watchfiles",
     "fastapi[standard]",
+    "passlib[bcrypt]",
+    "python-jose[cryptography]",
 ]
 dynamic = ["version"]
 
