@@ -448,7 +448,8 @@ def get_worklist_orders(
     try:
         with remote_session as remote:
             statement = select(ORDER).where(
-                ORDER.order_id.in_(order_ids), ORDER.cancelled is None
+                ORDER.order_id.in_(order_ids),
+                ORDER.cancelled == None,  # noqa ruff:e711
             )
             result = remote.exec(statement)
             results = []
@@ -487,7 +488,7 @@ def get_patient_orders(
 
             statement = (
                 select(ORDER)
-                .where(ORDER.patient_id == patient_id, ORDER.cancelled is None)
+                .where(ORDER.patient_id == patient_id, ORDER.cancelled == None)  # noqa ruff:e711
                 .order_by(ORDER.event_datetime.desc())
             )
             result = remote.exec(statement)
