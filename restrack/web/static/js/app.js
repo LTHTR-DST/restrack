@@ -272,7 +272,13 @@ function removeFromWorklist() {
 // Copy worklist
 function copyWorklist(sourceWorklistId) {
     if (!currentWorklistId) {
-        showAlert('Please select a target worklist first', 'warning');
+        showAlert('Please select a target worklist first by clicking on a worklist in the sidebar', 'warning');
+        return;
+    }
+
+    // Don't copy to the same worklist
+    if (sourceWorklistId === currentWorklistId) {
+        showAlert('Cannot copy a worklist to itself', 'warning');
         return;
     }
 
@@ -327,10 +333,18 @@ function showAlert(message, type = 'info') {
 
 // Subscribe/unsubscribe to worklists
 function toggleSubscription(worklistId, subscribe) {
+    // Get current user ID from data attribute
+    const userId = document.body.getAttribute('data-user-id');
+
+    if (!userId) {
+        showAlert('User ID not found, please refresh the page or log in again', 'danger');
+        return;
+    }
+
     const action = subscribe ? 'subscribe_to_worklist' : 'unsubscribe_worklist';
     const data = subscribe ?
-        { user_id: window.currentUserId, worklist_id: worklistId } :
-        { user_id: window.currentUserId, worklist_id: worklistId };
+        { user_id: parseInt(userId), worklist_id: worklistId } :
+        { user_id: parseInt(userId), worklist_id: worklistId };
 
     const method = subscribe ? 'PUT' : 'DELETE';
 

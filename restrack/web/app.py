@@ -254,13 +254,27 @@ async def subscription_manager(
     session: Session = Depends(get_app_db_session),
 ):
     """Get subscription manager component"""
-    from restrack.api.api import get_unsubscribed_worklists
+    try:
+        from restrack.api.api import get_unsubscribed_worklists
+        import logging
 
-    available_worklists = get_unsubscribed_worklists(current_user.id, session)
-    return templates.TemplateResponse(
-        "components/subscription_manager.html",
-        {"request": request, "worklists": available_worklists, "user": current_user},
-    )
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Loading subscription manager for user ID: {current_user.id}")
+
+        available_worklists = get_unsubscribed_worklists(current_user.id, session)
+        logger.debug(f"Found {len(available_worklists)} available worklists")
+
+        return templates.TemplateResponse(
+            "components/subscription_manager.html",
+            {
+                "request": request,
+                "worklists": available_worklists,
+                "user": current_user,
+            },
+        )
+    except Exception as e:
+        logging.error(f"Error loading subscription manager: {str(e)}")
+        return f"<div class='alert alert-danger'>Error loading available worklists: {str(e)}</div>"
 
 
 @app.get("/worklists/copy-manager")
@@ -270,13 +284,25 @@ async def copy_manager(
     session: Session = Depends(get_app_db_session),
 ):
     """Get copy manager component"""
-    from restrack.api.api import get_all_worklists
+    try:
+        from restrack.api.api import get_all_worklists
+        import logging
 
-    all_worklists = get_all_worklists(session)
-    return templates.TemplateResponse(
-        "components/copy_manager.html",
-        {"request": request, "worklists": all_worklists, "user": current_user},
-    )
+        logger = logging.getLogger(__name__)
+        logger.debug("Loading copy manager")
+
+        all_worklists = get_all_worklists(session)
+        logger.debug(f"Found {len(all_worklists)} total worklists")
+
+        return templates.TemplateResponse(
+            "components/copy_manager.html",
+            {"request": request, "worklists": all_worklists, "user": current_user},
+        )
+    except Exception as e:
+        logging.error(f"Error loading copy manager: {str(e)}")
+        return (
+            f"<div class='alert alert-danger'>Error loading worklists: {str(e)}</div>"
+        )
 
 
 @app.get("/worklists/delete-manager")

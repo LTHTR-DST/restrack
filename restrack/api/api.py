@@ -355,10 +355,17 @@ def get_user_worklists(
         )
 
 
+# API endpoint for getting unsubscribed worklists
 @app.get("/worklists/all_unsubscribed/{user_id}", response_model=List[WorkList])
-def get_unsubscribed_worklists(
+def get_unsubscribed_worklists_api(
     user_id: int, local_session: Session = Depends(get_app_db_session)
 ):
+    """API endpoint to retrieve worklists that the user is not subscribed to."""
+    return get_unsubscribed_worklists(user_id, local_session)
+
+
+# Function for direct imports
+def get_unsubscribed_worklists(user_id: int, local_session: Session):
     """
     Retrieve worklists that the user is not subscribed to.
     """
@@ -397,8 +404,15 @@ def get_unsubscribed_worklists(
         )
 
 
+# API endpoint for getting all worklists
 @app.get("/worklists/all/", response_model=List[WorkList])
-def get_all_worklists(local_session: Session = Depends(get_app_db_session)):
+def get_all_worklists_api(local_session: Session = Depends(get_app_db_session)):
+    """API endpoint to retrieve all worklists."""
+    return get_all_worklists(local_session)
+
+
+# Function for direct imports
+def get_all_worklists(local_session: Session):
     """
     Retrieve all worklists - for use with admin delete function.
     """

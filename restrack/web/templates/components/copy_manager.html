@@ -1,3 +1,7 @@
+<!-- Debug info: Component loaded -->
+<div class="debug-info small text-muted mb-2">Component loaded. {{ worklists|length if worklists else 0 }} worklists
+    available.</div>
+
 {% if worklists %}
 <div class="mb-3">
     <label class="form-label">Select worklist to copy from</label>
@@ -8,10 +12,13 @@
         {% endfor %}
     </select>
 </div>
-<button class="btn btn-warning" onclick="copySelectedWorklist()">
-    <i class="bi bi-copy"></i>
-    Copy to Current Worklist
-</button>
+<div class="d-flex flex-column gap-2">
+    <button class="btn btn-warning" onclick="copySelectedWorklist()">
+        <i class="bi bi-copy"></i>
+        Copy to Current Worklist
+    </button>
+    <small class="text-muted">Note: First select a worklist from the sidebar to copy to.</small>
+</div>
 
 <script>
     function copySelectedWorklist() {

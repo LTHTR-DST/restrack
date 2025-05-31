@@ -18,7 +18,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body>
+<body data-user-id="{{ user.id }}">
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
@@ -120,9 +120,11 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <!-- Custom JS -->
     <script src="/static/js/app.js"></script>
+
+    <!-- Debug JS (remove in production) -->
+    <script src="/static/js/debug.js"></script>
 
     {% block extra_scripts %}{% endblock %}
 </body>
