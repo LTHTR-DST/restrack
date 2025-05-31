@@ -49,7 +49,8 @@ function selectWorklist(worklistId, worklistName) {
     // Load orders for this worklist
     htmx.ajax('GET', `/worklists/${worklistId}/orders`, { target: '#orders-table' });
 
-    showAlert(`Selected worklist: ${worklistName}`, 'info');
+    // Show toast notification instead of alert
+    showToast(`Selected worklist: ${worklistName}`, 'info');
 }
 
 // Order selection handling
@@ -329,6 +330,53 @@ function showAlert(message, type = 'info') {
             alertDiv.remove();
         }
     }, 5000);
+}
+
+// Show toast notification (for non-intrusive messages)
+function showToast(message, type = 'info') {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+
+    // Create toast HTML
+    const toastDiv = document.createElement('div');
+    toastDiv.className = `toast show`;
+    toastDiv.setAttribute('role', 'alert');
+    toastDiv.setAttribute('aria-live', 'assertive');
+    toastDiv.setAttribute('aria-atomic', 'true');
+
+    // Set toast background based on type
+    let bgClass = 'bg-primary';
+    let textClass = 'text-white';
+    if (type === 'success') bgClass = 'bg-success';
+    else if (type === 'warning') bgClass = 'bg-warning';
+    else if (type === 'danger') bgClass = 'bg-danger';
+    else if (type === 'info') bgClass = 'bg-info';
+
+    toastDiv.innerHTML = `
+        <div class="toast-header ${bgClass} ${textClass}">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong class="me-auto">ResTrack</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            ${message}
+        </div>
+    `;
+
+    toastContainer.appendChild(toastDiv);
+
+    // Initialize Bootstrap toast
+    const toast = new bootstrap.Toast(toastDiv, {
+        autohide: true,
+        delay: 3000
+    });
+
+    toast.show();
+
+    // Remove toast element after it's hidden
+    toastDiv.addEventListener('hidden.bs.toast', () => {
+        toastDiv.remove();
+    });
 }
 
 // Subscribe/unsubscribe to worklists
