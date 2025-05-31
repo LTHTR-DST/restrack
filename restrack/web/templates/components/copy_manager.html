@@ -1,0 +1,33 @@
+{% if worklists %}
+<div class="mb-3">
+    <label class="form-label">Select worklist to copy from</label>
+    <select class="form-select" id="copy-worklist-select">
+        <option value="">Choose a worklist...</option>
+        {% for worklist in worklists %}
+        <option value="{{ worklist.id }}">{{ worklist.name }}</option>
+        {% endfor %}
+    </select>
+</div>
+<button class="btn btn-warning" onclick="copySelectedWorklist()">
+    <i class="bi bi-copy"></i>
+    Copy to Current Worklist
+</button>
+
+<script>
+    function copySelectedWorklist() {
+        const select = document.getElementById('copy-worklist-select');
+        const sourceWorklistId = select.value;
+
+        if (!sourceWorklistId) {
+            showAlert('Please select a worklist to copy from', 'warning');
+            return;
+        }
+
+        copyWorklist(parseInt(sourceWorklistId));
+    }
+</script>
+{% else %}
+<div class="text-center text-muted">
+    <p>No worklists available to copy from.</p>
+</div>
+{% endif %}

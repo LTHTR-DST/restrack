@@ -18,6 +18,8 @@ dependencies = [
     "sqlmodel",
     "watchfiles",
     "fastapi[standard]",
+    "jinja2",
+    "python-multipart",
 ]
 dynamic = ["version"]
 

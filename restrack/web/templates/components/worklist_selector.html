@@ -1,0 +1,26 @@
+<div class="list-group list-group-flush">
+    {% for worklist in worklists %}
+    <a href="#" class="list-group-item list-group-item-action worklist-item" data-worklist-id="{{ worklist.id }}"
+        onclick="selectWorklist({{ worklist.id }}, '{{ worklist.name }}')">
+        <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">{{ worklist.name }}</h6>
+            <small class="text-muted">ID: {{ worklist.id }}</small>
+        </div>
+        {% if worklist.description %}
+        <p class="mb-1 text-muted small">{{ worklist.description }}</p>
+        {% endif %}
+    </a>
+    {% endfor %}
+
+    {% if not worklists %}
+    <div class="text-center text-muted py-3">
+        <p class="mb-0">No worklists available</p>
+        <small>Create one in the Manage tab</small>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Store current user ID for JavaScript functions
+    window.currentUserId = {{ user.id }};
+</script>

@@ -1687,10 +1687,12 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "holoviews" },
+    { name = "jinja2" },
     { name = "pandas" },
     { name = "panel" },
     { name = "pyodbc" },
     { name = "python-dotenv" },
+    { name = "python-multipart" },
     { name = "sqlmodel" },
     { name = "watchfiles" },
 ]
@@ -1707,10 +1709,12 @@ dev = [
 requires-dist = [
     { name = "fastapi", extras = ["standard"] },
     { name = "holoviews" },
+    { name = "jinja2" },
     { name = "pandas" },
     { name = "panel" },
     { name = "pyodbc" },
     { name = "python-dotenv" },
+    { name = "python-multipart" },
     { name = "sqlmodel" },
     { name = "watchfiles" },
 ]

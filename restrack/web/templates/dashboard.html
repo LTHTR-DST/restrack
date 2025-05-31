@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders"
+                    type="button" role="tab">
+                    <i class="bi bi-list-ul"></i>
+                    Orders
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="manage-tab" data-bs-toggle="tab" data-bs-target="#manage" type="button"
+                    role="tab">
+                    <i class="bi bi-gear"></i>
+                    Manage Worklists
+                </button>
+            </li>
+            {% if user.username == 'admin' %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button"
+                    role="tab">
+                    <i class="bi bi-shield"></i>
+                    Admin
+                </button>
+            </li>
+            {% endif %}
+        </ul>
+
+        <!-- Tab content -->
+        <div class="tab-content" id="mainTabContent">
+            <!-- Orders Tab -->
+            <div class="tab-pane fade show active" id="orders" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <div id="orders-table">
+                            <div class="text-center mt-5">
+                                <p class="text-muted">Select a worklist to view orders</p>
+                            </div>
+                        </div>
+
+                        <!-- Action buttons row -->
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Status Action</label>
+                                <select class="form-select" id="status-select" onchange="updateOrderStatus()">
+                                    <option value="">Select status...</option>
+                                    <option value="Secretary seen">Secretary seen</option>
+                                    <option value="Clinician notified">Clinician notified</option>
+                                    <option value="Action taken by clinician">Action taken by clinician</option>
+                                    <option value="No action required">No action required</option>
+                                    <option value="Awaiting advice from another clinician">Awaiting advice from another
+                                        clinician</option>
+                                    <option value="Awaiting MDT outcome">Awaiting MDT outcome</option>
+                                    <option value="All actions complete">All actions complete</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Add Note</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="note-input" placeholder="Enter note...">
+                                    <button class="btn btn-success" onclick="addNote()">
+                                        <i class="bi bi-plus"></i>
+                                        Add Note
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button class="btn btn-danger" onclick="removeFromWorklist()">
+                                        <i class="bi bi-trash"></i>
+                                        Remove from Worklist
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manage Worklists Tab -->
+            <div class="tab-pane fade" id="manage" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Create New Worklist</h6>
+                            </div>
+                            <div class="card-body">
+                                <form hx-post="/worklists/create" hx-target="#alert-area"
+                                    hx-on::after-request="this.reset()">
+                                    <div class="mb-3">
+                                        <label for="worklist-name" class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="worklist-name" name="name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="worklist-description" class="form-label">Description</label>
+                                        <textarea class="form-control" id="worklist-description" name="description"
+                                            rows="3"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle"></i>
+                                        Create Worklist
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Subscribe to Worklists</h6>
+                            </div>
+                            <div class="card-body" id="subscription-manager">
+                                <!-- Will be loaded via htmx -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Copy from Worklist</h6>
+                            </div>
+                            <div class="card-body" id="copy-manager">
+                                <!-- Will be loaded via htmx -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Tab -->
+            {% if user.username == 'admin' %}
+            <div class="tab-pane fade" id="admin" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Add New User</h6>
+                            </div>
+                            <div class="card-body">
+                                <form hx-post="/users/create" hx-target="#alert-area"
+                                    hx-on::after-request="this.reset()">
+                                    <div class="mb-3">
+                                        <label for="username" class="form-label">Username</label>
+                                        <input type="text" class="form-control" id="username" name="username" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" name="email" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-person-plus"></i>
+                                        Add User
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0">Delete Worklist</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Warning: This will completely destroy the worklist!
+                                </div>
+                                <div id="delete-worklist-manager">
+                                    <!-- Will be loaded via htmx -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load initial data when page loads
+    document.addEventListener('DOMContentLoaded', function () {
+        // Load worklist selector
+        htmx.ajax('GET', '/worklists/selector', { target: '#worklist-selector' });
+
+        // Load subscription manager
+        htmx.ajax('GET', '/worklists/subscription-manager', { target: '#subscription-manager' });
+
+        // Load copy manager
+        htmx.ajax('GET', '/worklists/copy-manager', { target: '#copy-manager' });
+
+        {% if user.username == 'admin' %}
+        // Load delete manager for admin
+        htmx.ajax('GET', '/worklists/delete-manager', { target: '#delete-worklist-manager' });
+        {% endif %}
+    });
+</script>
+{% endblock %}

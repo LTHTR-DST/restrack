@@ -110,6 +110,7 @@ def add_to_worklist(event):
             "worklist_id": pn.state.cache["Worklist_id"],
             "order_ids": order_ids,
         }
+        print(orders_to_add)
         orders_to_add = json.dumps(orders_to_add)
         r = requests.put(f"{API_URL}/add_to_worklist/{orders_to_add}")
         if r.status_code == 200:

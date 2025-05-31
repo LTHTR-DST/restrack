@@ -97,7 +97,7 @@ def process_orders_for_display(df: pd.DataFrame) -> pn.widgets.Tabulator:
         hidden_columns=["index", "order_id", "Patient ID"],
         pagination="local",
         page_size=None,
-        selectable="checkbox-single",
+        selectable="checkbox",
         disabled=True,
         formatters=formatters,
         sizing_mode="scale_both",
