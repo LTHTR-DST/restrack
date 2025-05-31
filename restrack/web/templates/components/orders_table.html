@@ -22,9 +22,8 @@
             <!-- Patient group header -->
             <tr class="table-secondary">
                 <td colspan="9">
-                    <strong>
-                        <a href="#"
-                            onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ patient_id }}', {target: '#main-content'})">
+                    <strong> <a href="#"
+                            onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ patient_id }}', {target: '#orders-table'})">
                             Patient ID: {{ patient_id }}
                         </a>
                     </strong>
@@ -95,7 +94,7 @@
                 <td>{{ order.order_id }}</td>
                 <td>
                     <a href="#"
-                        onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ order.patient_id }}', {target: '#main-content'})">
+                        onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ order.patient_id }}', {target: '#orders-table'})">
                         {{ order.patient_id }}
                     </a>
                 </td>
