@@ -32,9 +32,8 @@
                 </td>
                 <td>{{ order.event_datetime.strftime('%Y-%m-%d %H:%M') if order.event_datetime else 'N/A' }}</td>
                 <td>
-                    <strong>{{ order.order_concept_name or 'Unknown' }}</strong>
-                    {% if order.measurement_concept_name and order.measurement_concept_name != order.order_concept_name
-                    %}
+                    <strong>{{ order.proc_name or 'Unknown' }}</strong>
+                    {% if order.measurement_concept_name and order.measurement_concept_name != order.proc_name %}
                     <br><small class="text-muted">{{ order.measurement_concept_name }}</small>
                     {% endif %}
                 </td>
