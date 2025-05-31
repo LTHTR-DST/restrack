@@ -101,6 +101,7 @@ async def worklist_orders(
 ):
     """Get orders for a worklist"""
     from restrack.api.api import get_worklist_orders
+    from itertools import groupby
 
     try:
         remote_session = next(get_remote_db_session())
@@ -124,9 +125,24 @@ async def worklist_orders(
             }
             combined_orders.append(order_info)
 
+        # Sort orders by patient_id for grouping
+        combined_orders.sort(key=lambda x: x["order"].patient_id)
+
+        # Group orders by patient_id
+        grouped_orders = {}
+        for patient_id, group in groupby(
+            combined_orders, key=lambda x: x["order"].patient_id
+        ):
+            grouped_orders[patient_id] = list(group)
+
         return templates.TemplateResponse(
             "components/orders_table.html",
-            {"request": request, "orders": combined_orders, "worklist_id": worklist_id},
+            {
+                "request": request,
+                "orders": combined_orders,
+                "grouped_orders": grouped_orders,
+                "worklist_id": worklist_id,
+            },
         )
     except Exception as e:
         return f"<div class='alert alert-danger'>Error loading orders: {str(e)}</div>"
@@ -141,6 +157,7 @@ async def patient_orders(
 ):
     """Get orders for a patient"""
     from restrack.api.api import get_patient_orders
+    from itertools import groupby
 
     try:
         remote_session = next(get_remote_db_session())
@@ -163,11 +180,22 @@ async def patient_orders(
             }
             combined_orders.append(order_info)
 
+        # Sort orders by patient_id for grouping
+        combined_orders.sort(key=lambda x: x["order"].patient_id)
+
+        # Group orders by patient_id
+        grouped_orders = {}
+        for patient_id, group in groupby(
+            combined_orders, key=lambda x: x["order"].patient_id
+        ):
+            grouped_orders[patient_id] = list(group)
+
         return templates.TemplateResponse(
             "components/orders_table.html",
             {
                 "request": request,
                 "orders": combined_orders,
+                "grouped_orders": grouped_orders,
                 "worklist_id": None,  # Patient orders, not from worklist
                 "is_patient_search": True,
             },
