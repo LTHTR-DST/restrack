@@ -875,3 +875,65 @@ async def copy_worklist(
         local_session.rollback()
         logger.error(f"Error copying worklist: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error copying worklist: {str(e)}")
+
+
+# Function for direct imports
+def get_worklist_stats(
+    worklist_id: int, local_session: Session, remote_session: Session
+):
+    """
+    Get statistics for a worklist - number of orders and patients.
+
+    Args:
+        worklist_id (int): The ID of the worklist to get statistics for
+        local_session (Session): Local database session
+        remote_session (Session): Remote (OMOP) database session
+
+    Returns:
+        tuple: (order_count, patient_count)
+    """
+    try:
+        # Get order IDs for this worklist
+        with local_session as local:
+            statement = select(OrderWorkList.order_id).where(
+                OrderWorkList.worklist_id == worklist_id
+            )
+            order_ids = local.exec(statement).fetchall()
+
+        if not order_ids:
+            return (0, 0)
+
+        # Extract order IDs from tuples
+        order_ids = [order_id[0] for order_id in order_ids]
+        order_count = len(order_ids)
+
+        # Get unique patient IDs for these orders
+        with remote_session as remote:
+            statement = (
+                select(ORDER.patient_id)
+                .where(
+                    ORDER.order_id.in_(order_ids),
+                    ORDER.cancelled == None,  # noqa ruff:e711
+                )
+                .distinct()
+            )
+
+            patient_ids = remote.exec(statement).fetchall()
+            patient_count = len(patient_ids)
+
+        return (order_count, patient_count)
+
+    except Exception as e:
+        logger.error(f"Error fetching worklist stats: {str(e)}")
+        return (0, 0)
+
+
+# API endpoint for getting worklist stats
+@app.get("/worklist_stats/{worklist_id}", response_model=tuple[int, int])
+def get_worklist_stats_api(
+    worklist_id: int,
+    local_session: Session = Depends(get_app_db_session),
+    remote_session: Session = Depends(get_remote_db_session),
+):
+    """API endpoint to retrieve statistics for a worklist."""
+    return get_worklist_stats(worklist_id, local_session, remote_session)

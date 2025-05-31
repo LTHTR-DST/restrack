@@ -83,12 +83,30 @@ async def worklist_selector(
     session: Session = Depends(get_app_db_session),
 ):
     """Get worklist selector component"""
-    from restrack.api.api import get_user_worklists
+    from restrack.api.api import get_user_worklists, get_worklist_stats
 
     worklists = get_user_worklists(current_user.id, session)
+
+    # Get stats for each worklist
+    remote_session = next(get_remote_db_session())
+    worklists_with_stats = []
+
+    for worklist in worklists:
+        order_count, patient_count = get_worklist_stats(
+            worklist.id, session, remote_session
+        )
+        worklist_dict = {
+            "id": worklist.id,
+            "name": worklist.name,
+            "description": worklist.description,
+            "order_count": order_count,
+            "patient_count": patient_count,
+        }
+        worklists_with_stats.append(worklist_dict)
+
     return templates.TemplateResponse(
         "components/worklist_selector.html",
-        {"request": request, "worklists": worklists, "user": current_user},
+        {"request": request, "worklists": worklists_with_stats, "user": current_user},
     )
 
 
@@ -356,12 +374,30 @@ async def refresh_worklists(
     session: Session = Depends(get_app_db_session),
 ):
     """Refresh worklist selector"""
-    from restrack.api.api import get_user_worklists
+    from restrack.api.api import get_user_worklists, get_worklist_stats
 
     worklists = get_user_worklists(current_user.id, session)
+
+    # Get stats for each worklist
+    remote_session = next(get_remote_db_session())
+    worklists_with_stats = []
+
+    for worklist in worklists:
+        order_count, patient_count = get_worklist_stats(
+            worklist.id, session, remote_session
+        )
+        worklist_dict = {
+            "id": worklist.id,
+            "name": worklist.name,
+            "description": worklist.description,
+            "order_count": order_count,
+            "patient_count": patient_count,
+        }
+        worklists_with_stats.append(worklist_dict)
+
     return templates.TemplateResponse(
         "components/worklist_selector.html",
-        {"request": request, "worklists": worklists, "user": current_user},
+        {"request": request, "worklists": worklists_with_stats, "user": current_user},
     )
 
 
