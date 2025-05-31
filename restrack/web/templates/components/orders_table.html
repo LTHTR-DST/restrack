@@ -10,114 +10,136 @@
                 <th>Patient ID</th>
                 <th>Order Date</th>
                 <th>Investigation</th>
-                <th>Status</th>
+                <th>System Status</th>
+                <th>User Status</th>
                 <th>Note</th>
                 <th>Priority</th>
             </tr>
         </thead>
         <tbody>
             {% if grouped_orders %}
-                {% for patient_id, patient_orders in grouped_orders.items() %}
-                    <!-- Patient group header -->
-                    <tr class="table-secondary">
-                        <td colspan="8">
-                            <strong>
-                                <a href="#"
-                                   onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ patient_id }}', {target: '#main-content'})">
-                                   Patient ID: {{ patient_id }}
-                                </a>
-                            </strong>
-                            <span class="badge bg-info">{{ patient_orders|length }} order{% if patient_orders|length != 1 %}s{% endif %}</span>
-                        </td>
-                    </tr>
-
-                    {% for item in patient_orders %}
-                    {% set order = item.order %}
-                    {% set status_info = item.status %}
-                    <tr>
-                        <td>
-                            <input type="checkbox" class="form-check-input order-checkbox" value="{{ order.order_id }}">
-                        </td>
-                        <td>{{ order.order_id }}</td>
-                        <td>{{ patient_id }}</td>
-                        <td>{{ order.event_datetime.strftime('%Y-%m-%d %H:%M') if order.event_datetime else 'N/A' }}</td>
-                        <td>
-                            <strong>{{ order.proc_name or 'Unknown' }}</strong>
-                            {% if order.measurement_concept_name and order.measurement_concept_name != order.proc_name %}
-                            <br><small class="text-muted">{{ order.measurement_concept_name }}</small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if status_info.status %}
-                            <span class="badge bg-secondary status-badge">{{ status_info.status }}</span>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if status_info.note %}
-                            <small class="text-truncate d-inline-block" style="max-width: 150px;"
-                                title="{{ status_info.note }}">{{ status_info.note }}</small>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if order.type_concept_name %}
-                            <small class="text-muted">{{ order.type_concept_name }}</small>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% endfor %}
-            {% else %}
-                {% for item in orders %}
-                {% set order = item.order %}
-                {% set status_info = item.status %}
-                <tr>
-                    <td>
-                        <input type="checkbox" class="form-check-input order-checkbox" value="{{ order.order_id }}">
-                    </td>
-                    <td>{{ order.order_id }}</td>
-                    <td>
+            {% for patient_id, patient_orders in grouped_orders.items() %}
+            <!-- Patient group header -->
+            <tr class="table-secondary">
+                <td colspan="9">
+                    <strong>
                         <a href="#"
-                            onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ order.patient_id }}', {target: '#main-content'})">
-                            {{ order.patient_id }}
+                            onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ patient_id }}', {target: '#main-content'})">
+                            Patient ID: {{ patient_id }}
                         </a>
-                    </td>
-                    <td>{{ order.event_datetime.strftime('%Y-%m-%d %H:%M') if order.event_datetime else 'N/A' }}</td>
-                    <td>
-                        <strong>{{ order.proc_name or 'Unknown' }}</strong>
-                        {% if order.measurement_concept_name and order.measurement_concept_name != order.proc_name %}
-                        <br><small class="text-muted">{{ order.measurement_concept_name }}</small>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if status_info.status %}
-                        <span class="badge bg-secondary status-badge">{{ status_info.status }}</span>
-                        {% else %}
-                        <span class="text-muted">-</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if status_info.note %}
-                        <small class="text-truncate d-inline-block" style="max-width: 150px;"
-                            title="{{ status_info.note }}">{{ status_info.note }}</small>
-                        {% else %}
-                        <span class="text-muted">-</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if order.type_concept_name %}
-                        <small class="text-muted">{{ order.type_concept_name }}</small>
-                        {% else %}
-                        <span class="text-muted">-</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
+                    </strong>
+                    <span class="badge bg-info">{{ patient_orders|length }} order{% if patient_orders|length != 1 %}s{%
+                        endif %}</span>
+                </td>
+            </tr>
+
+            {% for item in patient_orders %}
+            {% set order = item.order %}
+            {% set status_info = item.status %}
+            <tr>
+                <td>
+                    <input type="checkbox" class="form-check-input order-checkbox" value="{{ order.order_id }}">
+                </td>
+                <td>{{ order.order_id }}</td>
+                <td>{{ patient_id }}</td>
+                <td>{{ order.event_datetime.strftime('%Y-%m-%d %H:%M') if order.event_datetime else 'N/A' }}</td>
+                <td>
+                    <strong>{{ order.proc_name or 'Unknown' }}</strong>
+                    {% if order.measurement_concept_name and order.measurement_concept_name != order.proc_name %}
+                    <br><small class="text-muted">{{ order.measurement_concept_name }}</small>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.system_status_text %}
+                    <span class="badge bg-{{ item.system_status_class }}"
+                        title="Status: {{ item.system_status_text }} ({{ item.system_status }}){% if order.in_progress %} | In progress: {{ order.in_progress.strftime('%Y-%m-%d') }}{% endif %}{% if order.partial %} | Partial: {{ order.partial.strftime('%Y-%m-%d') }}{% endif %}{% if order.complete %} | Complete: {{ order.complete.strftime('%Y-%m-%d') }}{% endif %}">
+                        {{ item.system_status_text }}
+                    </span>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if status_info.status %}
+                    <span class="badge bg-secondary status-badge">{{ status_info.status }}</span>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if status_info.note %}
+                    <small class="text-truncate d-inline-block" style="max-width: 150px;"
+                        title="{{ status_info.note }}">{{ status_info.note }}</small>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if order.type_concept_name %}
+                    <small class="text-muted">{{ order.type_concept_name }}</small>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+            {% else %}
+            {% for item in orders %}
+            {% set order = item.order %}
+            {% set status_info = item.status %}
+            <tr>
+                <td>
+                    <input type="checkbox" class="form-check-input order-checkbox" value="{{ order.order_id }}">
+                </td>
+                <td>{{ order.order_id }}</td>
+                <td>
+                    <a href="#"
+                        onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ order.patient_id }}', {target: '#main-content'})">
+                        {{ order.patient_id }}
+                    </a>
+                </td>
+                <td>{{ order.event_datetime.strftime('%Y-%m-%d %H:%M') if order.event_datetime else 'N/A' }}</td>
+                <td>
+                    <strong>{{ order.proc_name or 'Unknown' }}</strong>
+                    {% if order.measurement_concept_name and order.measurement_concept_name != order.proc_name %}
+                    <br><small class="text-muted">{{ order.measurement_concept_name }}</small>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.system_status_text %}
+                    <span class="badge bg-{{ item.system_status_class }}"
+                        title="Status: {{ item.system_status_text }} ({{ item.system_status }}){% if order.in_progress %} | In progress: {{ order.in_progress.strftime('%Y-%m-%d') }}{% endif %}{% if order.partial %} | Partial: {{ order.partial.strftime('%Y-%m-%d') }}{% endif %}{% if order.complete %} | Complete: {{ order.complete.strftime('%Y-%m-%d') }}{% endif %}">
+                        {{ item.system_status_text }}
+                    </span>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if status_info.status %}
+                    <span class="badge bg-secondary status-badge">{{ status_info.status }}</span>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if status_info.note %}
+                    <small class="text-truncate d-inline-block" style="max-width: 150px;"
+                        title="{{ status_info.note }}">{{ status_info.note }}</small>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if order.type_concept_name %}
+                    <small class="text-muted">{{ order.type_concept_name }}</small>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
             {% endif %}
         </tbody>
     </table>

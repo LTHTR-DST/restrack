@@ -102,6 +102,7 @@ async def worklist_orders(
     """Get orders for a worklist"""
     from restrack.api.api import get_worklist_orders
     from itertools import groupby
+    from restrack.web.utils import get_status_description, get_status_class
 
     try:
         remote_session = next(get_remote_db_session())
@@ -117,11 +118,24 @@ async def worklist_orders(
 
         combined_orders = []
         for order in orders:
+            # Add system status info
+            system_status = None
+            system_status_text = None
+            system_status_class = None
+
+            if order.current_status is not None:
+                system_status = order.current_status
+                system_status_text = get_status_description(order.current_status)
+                system_status_class = get_status_class(order.current_status)
+
             order_info = {
                 "order": order,
                 "status": status_dict.get(
                     order.order_id, {"status": None, "note": None}
                 ),
+                "system_status": system_status,
+                "system_status_text": system_status_text,
+                "system_status_class": system_status_class,
             }
             combined_orders.append(order_info)
 
@@ -157,7 +171,7 @@ async def patient_orders(
 ):
     """Get orders for a patient"""
     from restrack.api.api import get_patient_orders
-    from itertools import groupby
+    from restrack.web.utils import get_status_description, get_status_class
 
     try:
         remote_session = next(get_remote_db_session())
@@ -172,31 +186,32 @@ async def patient_orders(
 
         combined_orders = []
         for order in orders:
+            # Add system status info
+            system_status = None
+            system_status_text = None
+            system_status_class = None
+
+            if order.current_status is not None:
+                system_status = order.current_status
+                system_status_text = get_status_description(order.current_status)
+                system_status_class = get_status_class(order.current_status)
+
             order_info = {
                 "order": order,
                 "status": status_dict.get(
                     order.order_id, {"status": None, "note": None}
                 ),
+                "system_status": system_status,
+                "system_status_text": system_status_text,
+                "system_status_class": system_status_class,
             }
             combined_orders.append(order_info)
-
-        # Sort orders by patient_id for grouping
-        combined_orders.sort(key=lambda x: x["order"].patient_id)
-
-        # Group orders by patient_id
-        grouped_orders = {}
-        for patient_id, group in groupby(
-            combined_orders, key=lambda x: x["order"].patient_id
-        ):
-            grouped_orders[patient_id] = list(group)
 
         return templates.TemplateResponse(
             "components/orders_table.html",
             {
                 "request": request,
                 "orders": combined_orders,
-                "grouped_orders": grouped_orders,
-                "worklist_id": None,  # Patient orders, not from worklist
                 "is_patient_search": True,
             },
         )
