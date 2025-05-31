@@ -1,10 +1,12 @@
 import pandas as pd
 import panel as pn
 from bokeh.models.widgets import HTMLTemplateFormatter
+from bokeh.models.widgets.tables import DateFormatter
 
 
-def process_orders_for_display(df):
-    df_to_view = df[
+def process_orders_for_display(df: pd.DataFrame) -> pn.widgets.Tabulator:
+    df_to_view = df.loc[
+        :,
         [
             "order_id",
             "patient_id",
@@ -17,88 +19,87 @@ def process_orders_for_display(df):
             "supplemental",
             "status",
             "user_note",
-        ]
+        ],
     ]
-
-    df_to_view["order_datetime"] = pd.to_datetime(
-        df_to_view["order_datetime"], format="mixed"
-    )
-    df_to_view["order_datetime"] = df_to_view["order_datetime"].dt.strftime("%d/%m/%Y")
-    df_to_view["in_progress"] = pd.to_datetime(
-        df_to_view["in_progress"], format="mixed"
-    )
-    df_to_view["in_progress"] = df_to_view["in_progress"].dt.strftime("%d/%m/%Y")
-    df_to_view["partial"] = pd.to_datetime(df_to_view["partial"], format="mixed")
-    df_to_view["partial"] = df_to_view["partial"].dt.strftime("%d/%m/%Y")
-    df_to_view["complete"] = pd.to_datetime(df_to_view["complete"], format="mixed")
-    df_to_view["complete"] = df_to_view["complete"].dt.strftime("%d/%m/%Y")
-    df_to_view["supplemental"] = pd.to_datetime(
-        df_to_view["supplemental"], format="mixed"
-    )
-    df_to_view["supplemental"] = df_to_view["supplemental"].dt.strftime("%d/%m/%Y")
 
     # Replace NaN values with "-"
     df_to_view = df_to_view.fillna("-")
 
     df_to_view.rename(
         columns={
+            "patient_id": "Patient ID",
             "proc_name": "Investigation",
             "current_status": "Status",
             "order_datetime": "Ordered",
             "in_progress": "In progress",
+            "partial": "Partial",
+            "complete": "Complete",
+            "supplemental": "Supplemental",
             "status": "User Status",
             "user_note": "User Note",
         },
         inplace=True,
     )
 
-    """ 1	waiting for review
-    10	no show
-    11	supplemental
-    2	data not collected
-    3	scheduled
-    4	in progress
-    5	partial
-    6	complete
-    7	cancelled
-    8	resolved
-    9	entered
-    -1	NA """
-
+    _ = {
+        1: "waiting for review",
+        10: "no show",
+        11: "supplemental",
+        2: "data not collected",
+        3: "scheduled",
+        4: "in progress",
+        5: "partial",
+        6: "complete",
+        7: "cancelled",
+        8: "resolved",
+        9: "entered",
+        -1: "NA ",
+    }
+    # df_to_view["Status"] = df_to_view["Status"].astype(int).map(status_desc)
     status_format_template = """
     <b><div style="background:
         <%= (function colorfromint(){
             if(Status == 6){
-                return("Green")
+                return("#00FF0055")
             }
             else if(Status == 5){
-                return("Yellow")
+                return("#FFFF0055")
             }
             else if([3,9].includes(Status)){
-                return ("Blue")
+                return ("#0000FF55")
             }
             else if(Status == 11){
-                return ("Red")
+                return ("#FF000055")
             }
             else if(Status  == 1 || Status == -1){
             return("White")
             }
-            else {return ("Black")}
+            else {return ("#00000055")}
          }()) %>;"> <%= Status %> </div></b>
     """
 
     status_formatter = HTMLTemplateFormatter(template=status_format_template)
+    date_formatter = DateFormatter(format="%d/%m/%Y")
+
+    formatters = {
+        "Status": status_formatter,
+        "Ordered": date_formatter,
+        "In progress": date_formatter,
+        "Partial": date_formatter,
+        "Complete": date_formatter,
+        "Supplemental": date_formatter,
+    }
 
     tbl = pn.widgets.Tabulator(
         df_to_view,
         layout="fit_data_stretch",
-        groupby=["patient_id"],
-        hidden_columns=["index", "order_id", "patient_id"],
+        groupby=["Patient ID"],
+        hidden_columns=["index", "order_id", "Patient ID"],
         pagination="local",
         page_size=None,
-        selectable="checkbox",
+        selectable="checkbox-single",
         disabled=True,
-        formatters={"Status": status_formatter},
+        formatters=formatters,
         sizing_mode="scale_both",
     )
 
