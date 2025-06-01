@@ -421,15 +421,6 @@ function handleLogout(event) {
     // Show feedback
     showAlert('Logging out...', 'info');
 
-    // Send a failed authentication request to clear the browser's auth cache
-    fetch('/', {
-        headers: {
-            'Authorization': 'Basic ZHVtbXk6ZHVtbXk=' // Invalid credentials to flush auth cache
-        }
-    }).catch(() => {
-        // Ignore errors - we expect this request to fail
-    }).finally(() => {
-        // Navigate to the logout endpoint
-        window.location.href = '/logout';
-    });
+    // Navigate to the logout endpoint which will clear the token cookie
+    window.location.href = '/logout';
 }

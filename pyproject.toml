@@ -20,6 +20,8 @@ dependencies = [
     "fastapi[standard]",
     "jinja2",
     "python-multipart",
+    "python-jose[cryptography]>=3.5.0",
+    "passlib[bcrypt]>=1.7.4",
 ]
 dynamic = ["version"]
 

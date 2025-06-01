@@ -2,12 +2,12 @@
 Web application main module - FastAPI app with htmx frontend
 """
 
-import json
-from fastapi import FastAPI, Request, Depends, HTTPException, Form, status
+from datetime import datetime, timedelta
+from typing import Optional
+from fastapi import FastAPI, Request, Depends, HTTPException, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlmodel import Session
 from restrack.models.worklist import User
 from restrack.api.api import (
@@ -15,6 +15,12 @@ from restrack.api.api import (
     get_app_db_session,
     get_user_by_username,
     get_remote_db_session,
+)
+from restrack.web.auth import (
+    verify_password,
+    create_access_token,
+    get_current_username,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
 )
 
 # Create the main app
@@ -27,31 +33,18 @@ app.mount("/api/v1", api_app)
 app.mount("/static", StaticFiles(directory="restrack/web/static"), name="static")
 templates = Jinja2Templates(directory="restrack/web/templates")
 
-# Basic auth setup
-security = HTTPBasic()
 
-
-def verify_user(credentials: HTTPBasicCredentials = Depends(security)):
-    """Verify user credentials"""
-    try:
-        with open("data/users.json", "r") as f:
-            users = json.load(f)
-            if users.get(credentials.username) == credentials.password:
-                return credentials.username
-    except Exception:
-        pass
-
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid authentication credentials",
-        headers={"WWW-Authenticate": "Basic"},
-    )
-
-
-def get_current_user(
-    username: str = Depends(verify_user), session: Session = Depends(get_app_db_session)
+async def get_current_user(
+    request: Request,
+    session: Session = Depends(get_app_db_session),
 ):
-    """Get current user object"""
+    """Get current user object from JWT token"""
+    # Get username from the token
+    username = await get_current_username(request=request)
+
+    if not username:
+        return None
+
     try:
         return get_user_by_username(username, session)
     except Exception:
@@ -60,84 +53,81 @@ def get_current_user(
 
 
 @app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request, current_user: User = Depends(get_current_user)):
+async def dashboard(
+    request: Request,
+    current_user: Optional[User] = Depends(get_current_user),
+):
     """Main dashboard page"""
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=302)
+
     return templates.TemplateResponse(
         "dashboard.html", {"request": request, "user": current_user}
     )
 
 
-@app.get("/logout")
-async def logout():
-    """Logout endpoint"""
-    # Create a response with 401 status that will invalidate the authentication
-    response = RedirectResponse(url="/logout-success", status_code=302)
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    # Clear any cookies (even though Basic Auth doesn't typically use them)
-    response.delete_cookie("Authorization")
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    """Login page"""
+    return templates.TemplateResponse(
+        "login.html", {"request": request, "current_year": datetime.now().year}
+    )
+
+
+@app.post("/login", response_class=HTMLResponse)
+async def login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    session: Session = Depends(get_app_db_session),
+):
+    """Process login form"""
+    # Verify user credentials
+    if not verify_password(username, password):
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "error": "Invalid username or password",
+                "current_year": datetime.now().year,
+            },
+        )
+
+    # Create access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": username}, expires_delta=access_token_expires
+    )
+
+    # Redirect to dashboard with token in cookie
+    response = RedirectResponse(url="/", status_code=302)
+
+    # Set secure cookie with token
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+    )
+
     return response
 
 
-@app.get("/logout-success", response_class=HTMLResponse)
-async def logout_success(request: Request):
-    """Logout success page that forces reauthentication"""
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Logged Out</title>
-        <meta http-equiv="refresh" content="2;url=/" />
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                margin: 0;
-                background-color: #f8f9fa;
-            }
-            .container {
-                text-align: center;
-                padding: 40px;
-                background-color: white;
-                border-radius: 8px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            h1 {
-                color: #0d6efd;
-            }
-            p {
-                margin: 20px 0;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Successfully Logged Out</h1>
-            <p>You have been successfully logged out of ResTrack.</p>
-            <p>Redirecting to login page...</p>
-        </div>
-        <script>
-            // Clear any browser-stored authentication
-            // Force a failed auth request to clear the browser's authentication cache
-            fetch('/', {
-                headers: {
-                    'Authorization': 'Basic ZHVtbXk6ZHVtbXk=' // This will fail but force a new auth prompt
-                }
-            }).then(() => {
-                // Wait a moment then redirect to the login page with random query param to avoid cache
-                setTimeout(() => {
-                    window.location.href = '/?nocache=' + new Date().getTime();
-                }, 2000);
-            });
-        </script>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+@app.get("/logout")
+async def logout():
+    """Logout endpoint"""
+    response = RedirectResponse(url="/login", status_code=302)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    # Delete the token cookie
+    response.delete_cookie("access_token")
+    return response
+
+
+# Worklist routes
 
 
 # Worklist routes
