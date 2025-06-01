@@ -2,26 +2,42 @@
 Web application main module - FastAPI app with htmx frontend
 """
 
+import logging
 from datetime import datetime, timedelta
+from itertools import groupby
 from typing import Optional
-from fastapi import FastAPI, Request, Depends, HTTPException, Form
+
+import uvicorn
+from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
-from restrack.models.worklist import User
-from restrack.api.api import (
+
+from restrack.api.core import get_app_db_session, get_remote_db_session
+from restrack.api.main import (
     app as api_app,
-    get_app_db_session,
-    get_user_by_username,
-    get_remote_db_session,
 )
-from restrack.web.auth import (
-    verify_password,
+from restrack.api.routers.orders import get_patient_orders, get_worklist_orders
+from restrack.api.routers.users import create_user as api_create_user
+from restrack.api.routers.users import get_user_by_username
+from restrack.api.routers.worklists import create_worklist as api_create_worklist
+from restrack.api.routers.worklists import (
+    get_all_worklists,
+    get_unsubscribed_worklists,
+    get_user_worklists,
+    get_worklist_stats,
+)
+from restrack.auth import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
     get_current_username,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
+    hash_password,
+    verify_password,
 )
+from restrack.models.worklist import User, WorkList
+from restrack.models.worklist import User as UserModel
+from restrack.web.utils import get_status_class, get_status_description
 
 # Create the main app
 app = FastAPI(title="ResTrack Web", description="Results Tracking Portal")
@@ -39,7 +55,7 @@ async def get_current_user(
     session: Session = Depends(get_app_db_session),
 ):
     """Get current user object from JWT token"""
-    # Get username from the token
+    # Get username from the token using the common auth module
     username = await get_current_username(request=request)
 
     if not username:
@@ -82,8 +98,8 @@ async def login(
     session: Session = Depends(get_app_db_session),
 ):
     """Process login form"""
-    # Verify user credentials
-    if not verify_password(username, password):
+    # Verify user credentials using database-backed authentication
+    if not verify_password(username, password, session):
         return templates.TemplateResponse(
             "login.html",
             {
@@ -101,6 +117,7 @@ async def login(
 
     # Redirect to dashboard with token in cookie
     response = RedirectResponse(url="/", status_code=302)
+    print("DEBUG: Created redirect response to /")
 
     # Set secure cookie with token
     response.set_cookie(
@@ -111,6 +128,8 @@ async def login(
         secure=False,  # Set to True in production with HTTPS
         samesite="lax",
     )
+    print(f"DEBUG: Set cookie access_token with value starting: {access_token[:15]}...")
+    print(f"DEBUG: Cookie will expire in {ACCESS_TOKEN_EXPIRE_MINUTES} minutes")
 
     return response
 
@@ -138,7 +157,6 @@ async def worklist_selector(
     session: Session = Depends(get_app_db_session),
 ):
     """Get worklist selector component"""
-    from restrack.api.api import get_user_worklists, get_worklist_stats
 
     worklists = get_user_worklists(current_user.id, session)
 
@@ -173,9 +191,6 @@ async def worklist_orders(
     session: Session = Depends(get_app_db_session),
 ):
     """Get orders for a worklist"""
-    from restrack.api.api import get_worklist_orders
-    from itertools import groupby
-    from restrack.web.utils import get_status_description, get_status_class
 
     try:
         remote_session = next(get_remote_db_session())
@@ -243,8 +258,6 @@ async def patient_orders(
     session: Session = Depends(get_app_db_session),
 ):
     """Get orders for a patient"""
-    from restrack.api.api import get_patient_orders
-    from restrack.web.utils import get_status_description, get_status_class
 
     try:
         remote_session = next(get_remote_db_session())
@@ -303,8 +316,6 @@ async def create_worklist(
     session: Session = Depends(get_app_db_session),
 ):
     """Create a new worklist"""
-    from restrack.models.worklist import WorkList
-    from restrack.api.api import create_worklist as api_create_worklist
 
     try:
         worklist = WorkList(
@@ -328,9 +339,6 @@ async def subscription_manager(
 ):
     """Get subscription manager component"""
     try:
-        from restrack.api.api import get_unsubscribed_worklists
-        import logging
-
         logger = logging.getLogger(__name__)
         logger.debug(f"Loading subscription manager for user ID: {current_user.id}")
 
@@ -358,9 +366,6 @@ async def copy_manager(
 ):
     """Get copy manager component"""
     try:
-        from restrack.api.api import get_all_worklists
-        import logging
-
         logger = logging.getLogger(__name__)
         logger.debug("Loading copy manager")
 
@@ -388,8 +393,6 @@ async def delete_manager(
     if current_user.username != "admin":
         return "<div class='alert alert-danger'>Access denied</div>"
 
-    from restrack.api.api import get_all_worklists
-
     all_worklists = get_all_worklists(session)
     return templates.TemplateResponse(
         "components/delete_manager.html",
@@ -402,6 +405,7 @@ async def create_user(
     request: Request,
     username: str = Form(...),
     email: str = Form(...),
+    password: str = Form(...),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_app_db_session),
 ):
@@ -409,11 +413,10 @@ async def create_user(
     if current_user.username != "admin":
         return "<div class='alert alert-danger'>Access denied</div>"
 
-    from restrack.models.worklist import User as UserModel
-    from restrack.api.api import create_user as api_create_user
-
     try:
-        user = UserModel(username=username, email=email)
+        # Hash the password before storing it
+        hashed_password = hash_password(password)
+        user = UserModel(username=username, email=email, password=hashed_password)
         created_user = api_create_user(user, session)
         return f"<div class='alert alert-success'>User '{created_user.username}' created successfully!</div>"
     except HTTPException as e:
@@ -429,7 +432,6 @@ async def refresh_worklists(
     session: Session = Depends(get_app_db_session),
 ):
     """Refresh worklist selector"""
-    from restrack.api.api import get_user_worklists, get_worklist_stats
 
     worklists = get_user_worklists(current_user.id, session)
 
@@ -457,6 +459,4 @@ async def refresh_worklists(
 
 
 if __name__ == "__main__":
-    import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8001)

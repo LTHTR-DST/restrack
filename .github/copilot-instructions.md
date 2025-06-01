@@ -68,14 +68,16 @@ python run_web.py
 
 ### Environment Configuration
 Copy `sample.env` to `.env` and configure:
-- `APP_DB_URL` - Local SQLite database path
-- `REMOTE_DB_URL` - OMOP CDM database connection
-- Other environment variables as needed
+- `DB_RESTRACK` - Local SQLite database path
+- `DB_CDM` - OMOP CDM database connection
+- `API_URL` - API server URL (e.g., http://127.0.0.1:8000/)
+- `JWT_SECRET_KEY` - Secret key for JWT token signing
+- `JWT_EXPIRE_MINUTES` - JWT token expiration time in minutes
 
 ## Key Features Implemented
 
 ### Core Functionality
-- **User Authentication** - Basic auth with JSON user store
+- **User Authentication** - JWT authentication with secure token storage
 - **Worklist Management** - Create, subscribe, copy, delete worklists
 - **Order Management** - View, filter, and manage clinical orders
 - **Status Tracking** - Update order status and add notes
@@ -128,7 +130,8 @@ restrack/
 - **Component targets** - Use `hx-target` to specify update areas
 - **Error handling** - Return alert HTML for user feedback
 - **State management** - Use JavaScript globals for client state
-- **Authentication** - All routes require basic auth (except logout)
+- **Authentication** - All routes require JWT authentication (except login)
+- **Dependency management** - Use uv for dependency management
 
 ## Database Schema
 
@@ -145,7 +148,7 @@ restrack/
 ## Common Tasks
 
 ### Adding a New API Endpoint
-1. Add route function in `restrack/api/api.py`
+1. Add route function in `restrack/api`
 2. Define request/response models if needed
 3. Add database operations using SQLModel
 4. Test with FastAPI docs at `/docs`
@@ -169,10 +172,25 @@ restrack/
 - Check database with SQLite browser for data issues
 
 ## Security Considerations
-- Basic authentication for all routes
+
+### Authentication System
+- **JWT Authentication** - Token-based authentication system replacing basic auth
+- **Token Storage** - HTTP-only cookies for secure token storage
+- **Expiration** - Configurable token expiration (default 30 minutes)
+- **Login/Logout** - Proper login form and logout functionality
+
+### JWT Implementation
+- **`auth.py`** - Core JWT functionality (token generation, validation, decoding)
+- **API Integration** - API endpoints protected with JWT authentication
+- **Middleware** - Authentication middleware that processes tokens from headers or cookies
+- **Environment Variables**:
+  - `JWT_SECRET_KEY` - Secret key for JWT signing
+  - `JWT_EXPIRE_MINUTES` - Token expiration time in minutes
+
+### General Security
 - SQL injection protection via SQLModel
 - Input validation on all forms
-- Admin-only routes protected by username check
+- Admin-only routes protected with authentication checks
 
 ## Performance Notes
 - Database sessions properly closed
@@ -181,12 +199,14 @@ restrack/
 - Responsive design for mobile users
 
 ## Future Enhancements
-- JWT token authentication
+- **JWT Enhancements**:
+  - Token refresh mechanism
+  - "Remember Me" functionality
+  - Role-based access control in tokens
 - Real-time notifications with WebSockets
 - Advanced filtering and search
 - Audit logging for clinical actions
 - Integration with external clinical systems
-- Role-based access control
 
 ## Troubleshooting
 
