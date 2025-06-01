@@ -31,7 +31,7 @@
                 <span class="navbar-text me-3">
                     Welcome, {{ user.username.title() }}!
                 </span>
-                <a class="nav-link" href="/logout">
+                <a class="nav-link" href="/logout" id="logout-link" onclick="handleLogout(event)">
                     <i class="bi bi-box-arrow-right"></i>
                     Logout
                 </a>

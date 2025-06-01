@@ -167,9 +167,7 @@ function updateOrderStatus() {
         return;
     }
 
-    const orderIds = Array.from(selectedOrders);
-
-    fetch('/api/v1/comment_orders/' + encodeURIComponent(JSON.stringify({
+    const orderIds = Array.from(selectedOrders); fetch('/api/v1/comment_orders/' + encodeURIComponent(JSON.stringify({
         action: selectedStatus,
         order_ids: orderIds
     })), {
@@ -413,4 +411,25 @@ function toggleSubscription(worklistId, subscribe) {
             console.error('Error:', error);
             showAlert('Error updating subscription', 'danger');
         });
+}
+
+// Handle logout action
+function handleLogout(event) {
+    // Prevent default behavior
+    event.preventDefault();
+
+    // Show feedback
+    showAlert('Logging out...', 'info');
+
+    // Send a failed authentication request to clear the browser's auth cache
+    fetch('/', {
+        headers: {
+            'Authorization': 'Basic ZHVtbXk6ZHVtbXk=' // Invalid credentials to flush auth cache
+        }
+    }).catch(() => {
+        // Ignore errors - we expect this request to fail
+    }).finally(() => {
+        // Navigate to the logout endpoint
+        window.location.href = '/logout';
+    });
 }

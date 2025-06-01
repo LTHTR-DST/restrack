@@ -70,9 +70,74 @@ async def dashboard(request: Request, current_user: User = Depends(get_current_u
 @app.get("/logout")
 async def logout():
     """Logout endpoint"""
-    response = RedirectResponse(url="/", status_code=302)
-    response.headers["WWW-Authenticate"] = "Basic"
+    # Create a response with 401 status that will invalidate the authentication
+    response = RedirectResponse(url="/logout-success", status_code=302)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    # Clear any cookies (even though Basic Auth doesn't typically use them)
+    response.delete_cookie("Authorization")
     return response
+
+
+@app.get("/logout-success", response_class=HTMLResponse)
+async def logout_success(request: Request):
+    """Logout success page that forces reauthentication"""
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Logged Out</title>
+        <meta http-equiv="refresh" content="2;url=/" />
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                background-color: #f8f9fa;
+            }
+            .container {
+                text-align: center;
+                padding: 40px;
+                background-color: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            h1 {
+                color: #0d6efd;
+            }
+            p {
+                margin: 20px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Successfully Logged Out</h1>
+            <p>You have been successfully logged out of ResTrack.</p>
+            <p>Redirecting to login page...</p>
+        </div>
+        <script>
+            // Clear any browser-stored authentication
+            // Force a failed auth request to clear the browser's authentication cache
+            fetch('/', {
+                headers: {
+                    'Authorization': 'Basic ZHVtbXk6ZHVtbXk=' // This will fail but force a new auth prompt
+                }
+            }).then(() => {
+                // Wait a moment then redirect to the login page with random query param to avoid cache
+                setTimeout(() => {
+                    window.location.href = '/?nocache=' + new Date().getTime();
+                }, 2000);
+            });
+        </script>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 
 
 # Worklist routes
