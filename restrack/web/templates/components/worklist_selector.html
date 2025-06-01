@@ -6,10 +6,10 @@
             <h6 class="mb-1">{{ worklist.name }}</h6>
             <div class="text-muted small">
                 <span title="{{ worklist.patient_count }} patient{% if worklist.patient_count != 1 %}s{% endif %}"><i
-                        class="bi bi-person-vcard"></i> {{ worklist.patient_count }}</span>
+                        class="bi bi-person"></i> {{ worklist.patient_count }}</span>
                 <span class="ms-2"
                     title="{{ worklist.order_count }} order{% if worklist.order_count != 1 %}s{% endif %}"><i
-                        class="bi bi-journal-medical"></i> {{ worklist.order_count }}</span>
+                        class="bi bi-list-ul"></i> {{ worklist.order_count }}</span>
             </div>
         </div>
         {% if worklist.description %}

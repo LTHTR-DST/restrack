@@ -6,7 +6,7 @@ import logging
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlmodel import Session, SQLModel, and_, create_engine, select
+from sqlmodel import Session, SQLModel, and_, create_engine, select, distinct, func
 
 from restrack.models.worklist import (
     OrderWorkList,
@@ -897,11 +897,11 @@ def get_worklist_stats(
 
         # Get order count directly from OrderWorkList table
         with local_session as local:
-            order_count_query = select(OrderWorkList).where(
+            order_count_query = select(distinct(OrderWorkList.order_id)).where(
                 OrderWorkList.worklist_id == worklist_id
             )
-            order_records = local.exec(order_count_query).all()
-            order_count = len(order_records)
+            order_ids = local.exec(order_count_query).all()
+            order_count = len(order_ids)
 
             logger.debug(f"Found {order_count} orders for worklist {worklist_id}")
 
@@ -916,18 +916,23 @@ def get_worklist_stats(
         try:
             # Since the screenshot shows data, let's try to get the patient counts directly from local database
             # This is a workaround if remote DB access isn't working correctly
-            with local_session as local:
-                # Try to get a count of unique patient IDs by joining with worklist orders
-                # patient_count_subquery = (
-                #     select(OrderWorkList.order_id)
-                #     .where(OrderWorkList.worklist_id == worklist_id)
-                #     .subquery()
-                # )
+            with remote_session as remote:
+                patient_count_query = select(
+                    func.count(distinct(ORDER.patient_id))
+                ).where(
+                    ORDER.order_id.in_(order_ids),
+                    ORDER.cancelled == None,  # noqa ruff:e711
+                )
 
-                # Since we don't have direct patient_id in OrderWorkList, we'll use the order count
-                # This is a placeholder - in a real system we'd query the remote DB for this
-                # But for now we'll just return the order count
-                patient_count = 1  # Default to at least 1 patient
+                patient_count = remote.exec(patient_count_query).one()
+
+                logger.debug(
+                    f"Found {patient_count} patients for worklist {worklist_id}"
+                )
+
+                if patient_count == 0:
+                    logger.debug(f"No patients found for worklist {worklist_id}")
+                    return (0, 0)
 
             return (order_count, patient_count)
 
