@@ -201,8 +201,8 @@
 
     // Load initial data when page loads
     document.addEventListener('DOMContentLoaded', function () {
-        // Load worklist selector (always visible)
-        htmx.ajax('GET', '/worklists/selector', { target: '#worklist-selector' });
+        // Load worklist selector (always visible) - using fast loading
+        htmx.ajax('GET', '/worklists/selector/fast', { target: '#worklist-selector' });
 
         // Also handle direct clicks on the manage tab
         document.getElementById('manage-tab').addEventListener('click', function () {

@@ -245,7 +245,7 @@ function removeFromWorklist() {
 
     const orderIds = Array.from(selectedOrders);
 
-    fetch('/api/v1/remove_order_from_worklist/' + encodeURIComponent(JSON.stringify({
+    fetch('/api/v1/remove_from_worklist/' + encodeURIComponent(JSON.stringify({
         worklist_id: currentWorklistId,
         order_ids: orderIds
     })), {
@@ -401,7 +401,7 @@ function toggleSubscription(worklistId, subscribe) {
             if (response.ok) {
                 showAlert(`${subscribe ? 'Subscribed to' : 'Unsubscribed from'} worklist`, 'success');
                 // Refresh worklist selector and subscription manager
-                htmx.ajax('GET', '/worklists/selector', { target: '#worklist-selector' });
+                htmx.ajax('GET', '/worklists/selector/fast', { target: '#worklist-selector' });
                 htmx.ajax('GET', '/worklists/subscription-manager', { target: '#subscription-manager' });
             } else {
                 showAlert(`Failed to ${subscribe ? 'subscribe to' : 'unsubscribe from'} worklist`, 'danger');

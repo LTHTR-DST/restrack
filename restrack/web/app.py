@@ -197,6 +197,39 @@ async def worklist_selector(
     )
 
 
+@app.get("/worklists/selector/fast")
+async def worklist_selector_fast(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_app_db_session),
+):
+    """Get worklist selector component without stats for fast loading"""
+
+    worklists = get_user_worklists(current_user.id, session)
+
+    # Return worklists without stats for immediate display
+    worklists_without_stats = []
+    for worklist in worklists:
+        worklist_dict = {
+            "id": worklist.id,
+            "name": worklist.name,
+            "description": worklist.description,
+            "order_count": None,  # Will be loaded asynchronously
+            "patient_count": None,  # Will be loaded asynchronously
+        }
+        worklists_without_stats.append(worklist_dict)
+
+    return templates.TemplateResponse(
+        "components/worklist_selector.html",
+        {
+            "request": request,
+            "worklists": worklists_without_stats,
+            "user": current_user,
+            "fast_load": True,
+        },
+    )
+
+
 @app.get("/worklists/{worklist_id}/orders")
 async def worklist_orders(
     worklist_id: int,
@@ -470,6 +503,32 @@ async def refresh_worklists(
         "components/worklist_selector.html",
         {"request": request, "worklists": worklists_with_stats, "user": current_user},
     )
+
+
+@app.get("/worklists/{worklist_id}/stats")
+async def worklist_stats(
+    worklist_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_app_db_session),
+):
+    """Get stats for a specific worklist"""
+    try:
+        remote_session = next(get_remote_db_session())
+        order_count, patient_count = get_worklist_stats(
+            worklist_id, session, remote_session
+        )
+        return {
+            "worklist_id": worklist_id,
+            "order_count": order_count,
+            "patient_count": patient_count,
+        }
+    except Exception as e:
+        return {
+            "worklist_id": worklist_id,
+            "order_count": 0,
+            "patient_count": 0,
+            "error": str(e),
+        }
 
 
 if __name__ == "__main__":

@@ -4,12 +4,16 @@
         onclick="selectWorklist({{ worklist.id }}, '{{ worklist.name }}')">
         <div class="d-flex w-100 justify-content-between">
             <h6 class="mb-1">{{ worklist.name }}</h6>
-            <div class="text-muted small">
+            <div class="text-muted small" id="stats-{{ worklist.id }}">
+                {% if fast_load %}
+                <span class="loading-stats"><i class="bi bi-three-dots"></i></span>
+                {% else %}
                 <span title="{{ worklist.patient_count }} patient{% if worklist.patient_count != 1 %}s{% endif %}"><i
                         class="bi bi-person"></i> {{ worklist.patient_count }}</span>
                 <span class="ms-2"
                     title="{{ worklist.order_count }} order{% if worklist.order_count != 1 %}s{% endif %}"><i
                         class="bi bi-list-ul"></i> {{ worklist.order_count }}</span>
+                {% endif %}
             </div>
         </div>
         {% if worklist.description %}
@@ -29,4 +33,49 @@
 <script>
     // Store current user ID for JavaScript functions
     window.currentUserId = {{ user.id }};
+
+    {% if fast_load %}
+    // Load stats asynchronously for each worklist
+    document.addEventListener('DOMContentLoaded', function () {
+        // Small delay to let the template fully render
+        setTimeout(loadWorklistStats, 100);
+    });
+
+    function loadWorklistStats() {
+        const worklistElements = document.querySelectorAll('[data-worklist-id]');
+
+        worklistElements.forEach(element => {
+            const worklistId = element.getAttribute('data-worklist-id');
+            const statsElement = document.getElementById(`stats-${worklistId}`);
+
+            if (statsElement) {
+                // Fetch stats for this worklist
+                fetch(`/worklists/${worklistId}/stats`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            console.warn(`Error loading stats for worklist ${worklistId}:`, data.error);
+                            statsElement.innerHTML = '<span class="stats-error"><i class="bi bi-exclamation-circle"></i> Stats unavailable</span>';
+                        } else {
+                            // Update with actual stats
+                            const patientText = data.patient_count === 1 ? 'patient' : 'patients';
+                            const orderText = data.order_count === 1 ? 'order' : 'orders';
+
+                            statsElement.innerHTML = `
+                                <span title="${data.patient_count} ${patientText}"><i class="bi bi-person"></i> ${data.patient_count}</span>
+                                <span class="ms-2" title="${data.order_count} ${orderText}"><i class="bi bi-list-ul"></i> ${data.order_count}</span>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Error fetching stats for worklist ${worklistId}:`, error);
+                        statsElement.innerHTML = '<span class="stats-error"><i class="bi bi-exclamation-circle"></i> Stats unavailable</span>';
+                    });
+            }
+        });
+    }
+
+    // If this is loaded via htmx, call the stats loading immediately
+    loadWorklistStats();
+    {% endif %}
 </script>

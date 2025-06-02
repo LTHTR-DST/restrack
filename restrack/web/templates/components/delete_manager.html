@@ -37,7 +37,7 @@
                     showAlert(data.message, 'success');
                     select.value = '';
                     // Refresh all worklist components
-                    htmx.ajax('GET', '/worklists/selector', { target: '#worklist-selector' });
+                    htmx.ajax('GET', '/worklists/selector/fast', { target: '#worklist-selector' });
                     htmx.ajax('GET', '/worklists/subscription-manager', { target: '#subscription-manager' });
                     htmx.ajax('GET', '/worklists/copy-manager', { target: '#copy-manager' });
                     htmx.ajax('GET', '/worklists/delete-manager', { target: '#delete-worklist-manager' });
