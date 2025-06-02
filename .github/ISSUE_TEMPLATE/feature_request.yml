@@ -1,0 +1,159 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for ResTrack
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please fill out the information below to help us understand and evaluate your request.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of ResTrack would this feature affect?
+      options:
+        - Frontend (htmx/HTML)
+        - Backend API (FastAPI)
+        - Authentication (JWT)
+        - Database (SQLite/OMOP CDM)
+        - Worklist Management
+        - Order Management
+        - User Management
+        - Reporting/Analytics
+        - Performance
+        - Security
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve workflow
+        - High - Essential for my use case
+        - Critical - Blocking current work
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      description: Is your feature request related to a problem? Please describe the current pain point.
+      placeholder: A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented.
+      placeholder: A clear and concise description of what you want to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Describe any alternative solutions or features you've considered.
+      placeholder: A clear and concise description of any alternative solutions or features you've considered.
+
+  - type: textarea
+    id: user_story
+    attributes:
+      label: User Story
+      description: Describe this feature from a user's perspective.
+      placeholder: |
+        As a [type of user],
+        I want [goal/desire]
+        so that [benefit/value].
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What conditions must be met for this feature to be considered complete?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups/Wireframes
+      description: If applicable, add mockups, wireframes, or screenshots to help explain your feature request.
+      placeholder: Paste images or links to mockups here...
+
+  - type: dropdown
+    id: user_type
+    attributes:
+      label: User Type
+      description: What type of user would primarily benefit from this feature?
+      options:
+        - Clinician
+        - Administrator
+        - System Administrator
+        - All Users
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Current Workflow
+      description: Describe how you currently accomplish this task (if at all).
+      placeholder: Describe your current process...
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact Assessment
+      description: How would this feature improve ResTrack? Consider efficiency, usability, accuracy, etc.
+      placeholder: Describe the expected benefits and impact...
+
+  - type: textarea
+    id: technical_considerations
+    attributes:
+      label: Technical Considerations
+      description: Are there any technical requirements, constraints, or considerations for this feature?
+      placeholder: |
+        - Performance requirements
+        - Security considerations
+        - Integration requirements
+        - Database changes needed
+        - etc.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, examples, or information about the feature request here.
+      placeholder: Any additional information that might be helpful...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched for existing feature requests that might be similar to this one
+          required: true
+        - label: I have provided all the requested information above
+          required: true
+        - label: This feature would benefit the ResTrack user community
+          required: true
+        - label: I understand this is a clinical application and changes must be carefully evaluated
+          required: true

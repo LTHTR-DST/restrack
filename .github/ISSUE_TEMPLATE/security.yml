@@ -1,0 +1,147 @@
+name: Security Issue
+description: Report a security vulnerability (private by default)
+title: "[SECURITY] "
+labels: ["security", "urgent"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **⚠️ SECURITY NOTICE ⚠️**
+
+        If this is a security vulnerability, please consider reporting it privately first to avoid potential exploitation.
+
+        For private security reports, please email the maintainers directly or use GitHub's private vulnerability reporting feature.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity Level
+      description: How severe is this security issue?
+      options:
+        - Critical - Immediate threat to patient data or system integrity
+        - High - Significant security risk
+        - Medium - Moderate security concern
+        - Low - Minor security issue
+        - Informational - Security best practice suggestion
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Security Category
+      description: What type of security issue is this?
+      options:
+        - Authentication/Authorization
+        - Data Exposure/Privacy
+        - Injection (SQL, XSS, etc.)
+        - Access Control
+        - Cryptography
+        - Input Validation
+        - Session Management
+        - Configuration Security
+        - Dependency Vulnerability
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Security Issue Description
+      description: Describe the security vulnerability or concern.
+      placeholder: |
+        Provide a clear description of the security issue:
+        - What is vulnerable?
+        - How could it be exploited?
+        - What data or functionality is at risk?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce (if applicable)
+      description: How can this vulnerability be reproduced?
+      placeholder: |
+        If this is an exploitable vulnerability, provide steps to reproduce:
+        1. Step 1
+        2. Step 2
+        3. Step 3
+
+        **Note: Please be responsible and don't include actual exploit code.**
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Potential Impact
+      description: What could happen if this vulnerability is exploited?
+      placeholder: |
+        Describe the potential impact:
+        - What data could be compromised?
+        - What systems could be affected?
+        - How might this impact patient care or clinical workflows?
+    validations:
+      required: true
+
+  - type: textarea
+    id: affected_components
+    attributes:
+      label: Affected Components
+      description: Which parts of ResTrack are affected?
+      placeholder: |
+        List affected components:
+        - Frontend/Backend
+        - Specific files or modules
+        - Database connections
+        - Authentication system
+        - etc.
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Suggested Mitigation
+      description: Do you have suggestions for fixing this issue?
+      placeholder: |
+        Suggest potential fixes or mitigations:
+        - Code changes needed
+        - Configuration updates
+        - Best practices to implement
+        - etc.
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Any relevant security advisories, CVEs, or documentation.
+      placeholder: |
+        Include relevant references:
+        - CVE numbers
+        - Security advisories
+        - Documentation links
+        - Related issues
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Security Checklist
+      description: Please confirm the following
+      options:
+        - label: I have verified this is a legitimate security concern
+          required: true
+        - label: I have not publicly disclosed this vulnerability elsewhere
+          required: true
+        - label: I understand this affects a clinical application with patient data
+          required: true
+        - label: I am reporting this in good faith to improve security
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        **Important Notes:**
+        - ResTrack handles clinical data - security issues may have serious implications
+        - Please follow responsible disclosure practices
+        - The maintainers will work to address legitimate security concerns promptly
+        - Consider using private reporting for critical vulnerabilities

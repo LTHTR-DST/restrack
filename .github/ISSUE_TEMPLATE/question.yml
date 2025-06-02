@@ -1,0 +1,83 @@
+name: Question/Support
+description: Ask a question or get support for ResTrack
+title: "[QUESTION] "
+labels: ["question", "support"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reaching out! Please provide as much detail as possible to help us assist you.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What type of question or support do you need?
+      options:
+        - Installation/Setup
+        - Configuration
+        - Usage/How-to
+        - Database Connection
+        - Authentication Issues
+        - Performance
+        - Integration
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question/Issue
+      description: What would you like to know or what problem are you trying to solve?
+      placeholder: Describe your question or issue in detail...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide context about your setup, environment, or what you're trying to accomplish.
+      placeholder: |
+        - ResTrack version:
+        - Operating system:
+        - Python version:
+        - Database type:
+        - Any relevant configuration:
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What Have You Tried?
+      description: What steps have you already taken to solve this?
+      placeholder: Describe what you've already tried...
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Outcome
+      description: What result are you expecting or hoping to achieve?
+      placeholder: What should happen?
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Any other relevant information, logs, or screenshots.
+      placeholder: Any additional context that might be helpful...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have checked the documentation and README
+          required: true
+        - label: I have searched for existing issues and discussions
+          required: true
+        - label: I have provided sufficient context and details
+          required: true
