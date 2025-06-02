@@ -42,6 +42,20 @@ from restrack.web.utils import get_status_class, get_status_description
 # Create the main app
 app = FastAPI(title="ResTrack Web", description="Results Tracking Portal")
 
+
+# Middleware to enforce authentication globally except for login/logout
+@app.middleware("http")
+async def enforce_auth_middleware(request: Request, call_next):
+    public_paths = ["/login", "/logout", "/static", "/favicon.ico"]
+    if any(request.url.path.startswith(path) for path in public_paths):
+        return await call_next(request)
+    # Check for valid user
+    username = await get_current_username(request=request)
+    if not username:
+        return RedirectResponse(url="/login", status_code=302)
+    return await call_next(request)
+
+
 # Mount the API
 app.mount("/api/v1", api_app)
 

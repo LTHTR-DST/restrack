@@ -5,10 +5,10 @@ This module serves as the main entry point for the ResTrack API.
 It configures the FastAPI application, includes all routers, and sets up middleware.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 
 from .core import lifespan
-from .auth import router as auth_router, jwt_auth_middleware
+from .auth import router as auth_router, jwt_auth_middleware, get_current_api_user
 from .routers.users import router as users_router
 from .routers.worklists import router as worklists_router
 from .routers.orders import router as orders_router
@@ -18,6 +18,7 @@ app = FastAPI(
     title="ResTrack API",
     description="REST API for the ResTrack clinical results tracking system",
     lifespan=lifespan,
+    dependencies=[Depends(get_current_api_user)],  # Enforce auth globally
 )
 
 # Add authentication middleware
