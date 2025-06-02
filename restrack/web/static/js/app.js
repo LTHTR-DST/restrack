@@ -167,7 +167,7 @@ function updateOrderStatus() {
         return;
     }
 
-    const orderIds = Array.from(selectedOrders); fetch('/api/v1/comment_orders/' + encodeURIComponent(JSON.stringify({
+    const orderIds = Array.from(selectedOrders); fetch('/api/v1/comment/' + encodeURIComponent(JSON.stringify({
         action: selectedStatus,
         order_ids: orderIds
     })), {
@@ -205,7 +205,7 @@ function addNote() {
 
     const orderIds = Array.from(selectedOrders);
 
-    fetch('/api/v1/annotate_worklist_orders/' + encodeURIComponent(JSON.stringify({
+    fetch('/api/v1/annotate/' + encodeURIComponent(JSON.stringify({
         note_text: noteText,
         order_ids: orderIds,
         worklist_id: currentWorklistId
@@ -285,7 +285,7 @@ function copyWorklist(sourceWorklistId) {
         return;
     }
 
-    fetch('/api/v1/copy_worklist/' + encodeURIComponent(JSON.stringify({
+    fetch('/api/v1/worklists/copy/' + encodeURIComponent(JSON.stringify({
         worklist_to_copy_from: sourceWorklistId,
         current_worklist: currentWorklistId
     })), {
@@ -387,7 +387,7 @@ function toggleSubscription(worklistId, subscribe) {
         return;
     }
 
-    const action = subscribe ? 'subscribe_to_worklist' : 'unsubscribe_worklist';
+    const action = subscribe ? 'worklists/subscribe' : 'worklists/unsubscribe';
     const data = subscribe ?
         { user_id: parseInt(userId), worklist_id: worklistId } :
         { user_id: parseInt(userId), worklist_id: worklistId };
