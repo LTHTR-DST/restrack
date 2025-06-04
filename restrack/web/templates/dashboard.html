@@ -117,7 +117,7 @@
                     <div class="col-md-4">
                         <div class="card">
                             <div class="card-header">
-                                <h6 class="mb-0">Subscribe to Worklists</h6>
+                                <h6 class="mb-0">Manage your worklists</h6>
                             </div>
                             <div class="card-body" id="subscription-manager">
                                 <!-- Will be loaded via htmx -->
@@ -157,8 +157,7 @@
                                     <div class="mb-3">
                                         <label for="email" class="form-label">Email</label>
                                         <input type="email" class="form-control" id="email" name="email" required
-                                            pattern="^[^@\s]+@[^@\s]+\.nhs\.uk$"
-                                            title="Email must end with nhs.uk">
+                                            pattern="^[^@\s]+@[^@\s]+\.nhs\.uk$" title="Email must end with nhs.uk">
                                         <div class="form-text">Email must end with <strong>nhs.uk</strong></div>
                                     </div>
                                     <div class="mb-3">
@@ -260,7 +259,7 @@
     // Client-side repeat password check for Add User form
     const addUserForm = document.getElementById('add-user-form');
     if (addUserForm) {
-        addUserForm.addEventListener('submit', function(e) {
+        addUserForm.addEventListener('submit', function (e) {
             const pw = document.getElementById('password');
             const pw2 = document.getElementById('repeat-password');
             if (pw.value !== pw2.value) {

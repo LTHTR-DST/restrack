@@ -1,12 +1,7 @@
-<!-- Debug info: Component loaded -->
-<div class="debug-info small text-muted mb-2">Component loaded. {{ all_worklists|length if all_worklists else 0 }}
-    worklists available.</div>
-
 <div class="mb-3">
-    <h6 class="mb-3">Subscribe/Unsubscribe Worklists</h6>
     <div class="list-group" style="max-height: 350px; overflow-y: auto;">
         {% if all_worklists %}
-        {% for worklist in all_worklists %}
+        {% for worklist in all_worklists|sort(attribute='name') %}
         <div class="list-group-item d-flex justify-content-between align-items-center">
             <div>
                 <strong>{{ worklist.name }}</strong>
