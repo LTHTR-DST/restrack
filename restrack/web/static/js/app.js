@@ -125,7 +125,7 @@ function updateActionButtons() {
 // Add selected orders to current worklist
 function addSelectedToWorklist() {
     if (selectedOrders.size === 0 || !currentWorklistId) {
-        showAlert('Please select orders and a worklist', 'warning');
+        showToast('Please select orders and a worklist', 'warning');
         return;
     }
 
@@ -140,7 +140,7 @@ function addSelectedToWorklist() {
         .then(response => response.json())
         .then(success => {
             if (success) {
-                showAlert(`Added ${orderIds.length} orders to worklist`, 'success');
+                showToast(`Added ${orderIds.length} orders to worklist`, 'success');
                 selectedOrders.clear();
                 updateAddToWorklistButton();
                 // Refresh current worklist if it's selected
@@ -148,12 +148,12 @@ function addSelectedToWorklist() {
                     htmx.ajax('GET', `/worklists/${currentWorklistId}/orders`, { target: '#orders-table' });
                 }
             } else {
-                showAlert('Failed to add orders to worklist', 'danger');
+                showToast('Failed to add orders to worklist', 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('Error adding orders to worklist', 'danger');
+            showToast('Error adding orders to worklist', 'danger');
         });
 }
 
@@ -163,7 +163,7 @@ function updateOrderStatus() {
     const selectedStatus = statusSelect.value;
 
     if (!selectedStatus || selectedOrders.size === 0) {
-        showAlert('Please select orders and a status', 'warning');
+        showToast('Please select orders and a status', 'warning');
         return;
     }
 
@@ -175,7 +175,7 @@ function updateOrderStatus() {
     })
         .then(response => {
             if (response.ok) {
-                showAlert(`Updated status for ${orderIds.length} orders`, 'success');
+                showToast(`Updated status for ${orderIds.length} orders`, 'success');
                 statusSelect.value = '';
                 selectedOrders.clear();
                 updateActionButtons();
@@ -184,12 +184,12 @@ function updateOrderStatus() {
                     htmx.ajax('GET', `/worklists/${currentWorklistId}/orders`, { target: '#orders-table' });
                 }
             } else {
-                showAlert('Failed to update order status', 'danger');
+                showToast('Failed to update order status', 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('Error updating order status', 'danger');
+            showToast('Error updating order status', 'danger');
         });
 }
 
@@ -199,7 +199,7 @@ function addNote() {
     const noteText = noteInput.value.trim();
 
     if (!noteText || selectedOrders.size === 0 || !currentWorklistId) {
-        showAlert('Please select orders, enter a note, and select a worklist', 'warning');
+        showToast('Please select a worklist, orders, and enter a note', 'warning');
         return;
     }
 
@@ -214,7 +214,7 @@ function addNote() {
     })
         .then(response => {
             if (response.ok) {
-                showAlert(`Added note to ${orderIds.length} orders`, 'success');
+                showToast(`Added note to ${orderIds.length} orders`, 'success');
                 noteInput.value = '';
                 selectedOrders.clear();
                 updateActionButtons();
@@ -223,19 +223,19 @@ function addNote() {
                     htmx.ajax('GET', `/worklists/${currentWorklistId}/orders`, { target: '#orders-table' });
                 }
             } else {
-                showAlert('Failed to add note', 'danger');
+                showToast('Failed to add note', 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('Error adding note', 'danger');
+            showToast('Error adding note', 'danger');
         });
 }
 
 // Remove orders from worklist
 function removeFromWorklist() {
     if (selectedOrders.size === 0 || !currentWorklistId) {
-        showAlert('Please select orders to remove', 'warning');
+        showToast('Please select orders to remove', 'warning');
         return;
     }
 
@@ -253,31 +253,31 @@ function removeFromWorklist() {
     })
         .then(response => {
             if (response.ok) {
-                showAlert(`Removed ${orderIds.length} orders from worklist`, 'success');
+                showToast(`Removed ${orderIds.length} orders from worklist`, 'success');
                 selectedOrders.clear();
                 updateActionButtons();
                 // Refresh current worklist
                 htmx.ajax('GET', `/worklists/${currentWorklistId}/orders`, { target: '#orders-table' });
             } else {
-                showAlert('Failed to remove orders', 'danger');
+                showToast('Failed to remove orders', 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('Error removing orders', 'danger');
+            showToast('Error removing orders', 'danger');
         });
 }
 
 // Copy worklist
 function copyWorklist(sourceWorklistId) {
     if (!currentWorklistId) {
-        showAlert('Please select a target worklist first by clicking on a worklist in the sidebar', 'warning');
+        showToast('Please select a target worklist first by clicking on a worklist in the sidebar', 'warning');
         return;
     }
 
     // Don't copy to the same worklist
     if (sourceWorklistId === currentWorklistId) {
-        showAlert('Cannot copy a worklist to itself', 'warning');
+        showToast('Cannot copy a worklist to itself', 'warning');
         return;
     }
 
@@ -293,42 +293,42 @@ function copyWorklist(sourceWorklistId) {
     })
         .then(response => {
             if (response.ok) {
-                showAlert('Worklist copied successfully', 'success');
+                showToast('Worklist copied successfully', 'success');
                 // Refresh current worklist
                 if (currentWorklistId) {
                     htmx.ajax('GET', `/worklists/${currentWorklistId}/orders`, { target: '#orders-table' });
                 }
             } else {
-                showAlert('Failed to copy worklist', 'danger');
+                showToast('Failed to copy worklist', 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('Error copying worklist', 'danger');
+            showToast('Error copying worklist', 'danger');
         });
 }
 
 // Show alert message
-function showAlert(message, type = 'info') {
-    const alertArea = document.getElementById('alert-area');
-    if (!alertArea) return;
+// function showAlert(message, type = 'info') {
+//     const alertArea = document.getElementById('alert-area');
+//     if (!alertArea) return;
 
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+//     const alertDiv = document.createElement('div');
+//     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+//     alertDiv.innerHTML = `
+//         ${message}
+//         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+//     `;
 
-    alertArea.appendChild(alertDiv);
+//     alertArea.appendChild(alertDiv);
 
-    // Auto-dismiss after 5 seconds
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
-}
+//     // Auto-dismiss after 5 seconds
+//     setTimeout(() => {
+//         if (alertDiv.parentNode) {
+//             alertDiv.remove();
+//         }
+//     }, 5000);
+// }
 
 // Show toast notification (for non-intrusive messages)
 function showToast(message, type = 'info') {
@@ -383,7 +383,7 @@ function toggleSubscription(worklistId, subscribe) {
     const userId = document.body.getAttribute('data-user-id');
 
     if (!userId) {
-        showAlert('User ID not found, please refresh the page or log in again', 'danger');
+        showToast('User ID not found, please refresh the page or log in again', 'danger');
         return;
     }
 
@@ -399,17 +399,17 @@ function toggleSubscription(worklistId, subscribe) {
     })
         .then(response => {
             if (response.ok) {
-                showAlert(`${subscribe ? 'Subscribed to' : 'Unsubscribed from'} worklist`, 'success');
+                showToast(`${subscribe ? 'Subscribed to' : 'Unsubscribed from'} worklist`, 'success');
                 // Refresh worklist selector and subscription manager
                 htmx.ajax('GET', '/worklists/selector/fast', { target: '#worklist-selector' });
                 htmx.ajax('GET', '/worklists/subscription-manager', { target: '#subscription-manager' });
             } else {
-                showAlert(`Failed to ${subscribe ? 'subscribe to' : 'unsubscribe from'} worklist`, 'danger');
+                showToast(`Failed to ${subscribe ? 'subscribe to' : 'unsubscribe from'} worklist`, 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('Error updating subscription', 'danger');
+            showToast('Error updating subscription', 'danger');
         });
 }
 
@@ -419,7 +419,7 @@ function handleLogout(event) {
     event.preventDefault();
 
     // Show feedback
-    showAlert('Logging out...', 'info');
+    showToast('Logging out...', 'info');
 
     // Navigate to the logout endpoint which will clear the token cookie
     window.location.href = '/logout';

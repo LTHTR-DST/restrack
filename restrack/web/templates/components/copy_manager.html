@@ -26,7 +26,7 @@
         const sourceWorklistId = select.value;
 
         if (!sourceWorklistId) {
-            showAlert('Please select a worklist to copy from', 'warning');
+            showToast('Please select a worklist to copy from', 'warning');
             return;
         }
 

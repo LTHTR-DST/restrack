@@ -20,7 +20,7 @@
         const worklistName = select.options[select.selectedIndex].text;
 
         if (!worklistId) {
-            showAlert('Please select a worklist to delete', 'warning');
+            showToast('Please select a worklist to delete', 'warning');
             return;
         }
 
@@ -34,7 +34,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    showAlert(data.message, 'success');
+                    showToast(data.message, 'success');
                     select.value = '';
                     // Refresh all worklist components
                     htmx.ajax('GET', '/worklists/selector/fast', { target: '#worklist-selector' });
@@ -42,12 +42,12 @@
                     htmx.ajax('GET', '/worklists/copy-manager', { target: '#copy-manager' });
                     htmx.ajax('GET', '/worklists/delete-manager', { target: '#delete-worklist-manager' });
                 } else {
-                    showAlert('Failed to delete worklist', 'danger');
+                    showToast('Failed to delete worklist', 'danger');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showAlert('Error deleting worklist', 'danger');
+                showToast('Error deleting worklist', 'danger');
             });
     }
 </script>
