@@ -149,19 +149,32 @@
                             </div>
                             <div class="card-body">
                                 <form hx-post="/users/create" hx-target="#alert-area"
-                                    hx-on::after-request="this.reset()">
+                                    hx-on::after-request="this.reset()" id="add-user-form">
                                     <div class="mb-3">
                                         <label for="username" class="form-label">Username</label>
                                         <input type="text" class="form-control" id="username" name="username" required>
                                     </div>
                                     <div class="mb-3">
                                         <label for="email" class="form-label">Email</label>
-                                        <input type="email" class="form-control" id="email" name="email" required>
+                                        <input type="email" class="form-control" id="email" name="email" required
+                                            pattern="^[^@\s]+@[^@\s]+\.nhs\.uk$"
+                                            title="Email must end with nhs.uk">
+                                        <div class="form-text">Email must end with <strong>nhs.uk</strong></div>
                                     </div>
                                     <div class="mb-3">
                                         <label for="password" class="form-label">Password</label>
                                         <input type="password" class="form-control" id="password" name="password"
-                                            required>
+                                            required minlength="8"
+                                            pattern="^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+                                            title="Minimum 8 characters, one uppercase, one number, one special character">
+                                        <div class="form-text">Minimum 8 characters, one uppercase, one number, one
+                                            special character</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="repeat-password" class="form-label">Repeat Password</label>
+                                        <input type="password" class="form-control" id="repeat-password"
+                                            name="repeat_password" required>
+                                        <div class="invalid-feedback">Passwords do not match.</div>
                                     </div>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="bi bi-person-plus"></i>
@@ -243,4 +256,20 @@
         }
         {% endif %}
     });
+
+    // Client-side repeat password check for Add User form
+    const addUserForm = document.getElementById('add-user-form');
+    if (addUserForm) {
+        addUserForm.addEventListener('submit', function(e) {
+            const pw = document.getElementById('password');
+            const pw2 = document.getElementById('repeat-password');
+            if (pw.value !== pw2.value) {
+                pw2.classList.add('is-invalid');
+                e.preventDefault();
+                e.stopPropagation();
+            } else {
+                pw2.classList.remove('is-invalid');
+            }
+        });
+    }
 </script>{% endblock %}

@@ -39,6 +39,7 @@ class User(SQLModel, table=True):
     username: str
     email: str
     password: str
+    must_change_password: bool = Field(default=True, title="User must change password on next login")
     # created_at: datetime | None = Field(default=datetime.today())
 
 

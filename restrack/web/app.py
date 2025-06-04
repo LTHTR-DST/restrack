@@ -6,10 +6,11 @@ import logging
 from datetime import datetime, timedelta
 from itertools import groupby
 from typing import Optional
+import re
 
 import uvicorn
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
@@ -122,6 +123,25 @@ async def login(
                 "current_year": datetime.now().year,
             },
         )
+
+    # Check if user must change password
+    user = get_user_by_username(username, session)
+    if getattr(user, "must_change_password", False):
+        # Set token so user is authenticated for password change
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": username}, expires_delta=access_token_expires
+        )
+        response = RedirectResponse(url="/change-password", status_code=302)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+        )
+        return response
 
     # Create access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -453,6 +473,7 @@ async def create_user(
     username: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
+    repeat_password: str = Form(...),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_app_db_session),
 ):
@@ -460,10 +481,23 @@ async def create_user(
     if current_user.username != "admin":
         return "<div class='alert alert-danger'>Access denied</div>"
 
+    # Email validation (must end with nhs.uk)
+    if not email.lower().endswith(".nhs.uk"):
+        return "<div class='alert alert-danger'>Email must end with nhs.uk</div>"
+
+    # Password requirements
+    pw_pattern = r"^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+    if not re.match(pw_pattern, password):
+        return ("<div class='alert alert-danger'>Password must be at least 8 characters, "
+                "contain an uppercase letter, a number, and a special character.</div>")
+
+    # Repeat password check
+    if password != repeat_password:
+        return "<div class='alert alert-danger'>Passwords do not match.</div>"
+
     try:
-        # Hash the password before storing it
         hashed_password = hash_password(password)
-        user = UserModel(username=username, email=email, password=hashed_password)
+        user = UserModel(username=username, email=email, password=hashed_password, must_change_password=True)
         created_user = api_create_user(user, session)
         return f"<div class='alert alert-success'>User '{created_user.username}' created successfully!</div>"
     except HTTPException as e:
@@ -529,6 +563,65 @@ async def worklist_stats(
             "patient_count": 0,
             "error": str(e),
         }
+
+
+@app.get("/change-password", response_class=HTMLResponse)
+async def change_password_form(request: Request, current_user: User = Depends(get_current_user)):
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=302)
+    return templates.TemplateResponse("change_password.html", {"request": request, "user": current_user})
+
+
+@app.post("/change-password", response_class=HTMLResponse)
+async def change_password(
+    request: Request,
+    old_password: str = Form(...),
+    new_password: str = Form(...),
+    repeat_password: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_app_db_session),
+):
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Check old password
+    if not verify_password(current_user.username, old_password, session):
+        return templates.TemplateResponse(
+            "change_password.html",
+            {"request": request, "user": current_user, "error": "Old password is incorrect."},
+        )
+
+    # Password requirements
+    import re
+    pw_pattern = r"^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
+    if not re.match(pw_pattern, new_password):
+        return templates.TemplateResponse(
+            "change_password.html",
+            {"request": request, "user": current_user, "error": "Password must be at least 8 characters, contain an uppercase letter, a number, and a special character."},
+        )
+
+    if new_password != repeat_password:
+        return templates.TemplateResponse(
+            "change_password.html",
+            {"request": request, "user": current_user, "error": "Passwords do not match."},
+        )
+
+    # Update password and must_change_password flag
+    try:
+        db_user = get_user_by_username(current_user.username, session)
+        db_user.password = hash_password(new_password)
+        db_user.must_change_password = False
+        session.add(db_user)
+        session.commit()
+        return templates.TemplateResponse(
+            "change_password.html",
+            {"request": request, "user": db_user, "success": "Password changed successfully."},
+        )
+    except Exception as e:
+        return templates.TemplateResponse(
+            "change_password.html",
+            {"request": request, "user": current_user, "error": f"Error changing password: {str(e)}"},
+        )
 
 
 if __name__ == "__main__":
