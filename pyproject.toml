@@ -10,9 +10,6 @@ requires-python = ">=3.12"
 license = { file = "LICENSE" }
 authors = [{ name = "vvcb" }]
 dependencies = [
-    "holoviews",
-    "pandas",
-    "panel",
     "pyodbc",
     "python-dotenv",
     "sqlmodel",
@@ -38,8 +35,7 @@ Homepage = "https://github.com/LTHTR-DST/restrack"
 
 [dependency-groups]
 dev = [
-    "black>=24.10.0",
-    "jupyterlab>=4.3.3",
+    "alembic>=1.16.1",
     "pre-commit>=4.0.1",
     "ruff>=0.8.2",
 ]
