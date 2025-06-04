@@ -10,7 +10,7 @@ import re
 
 import uvicorn
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
@@ -25,7 +25,6 @@ from restrack.api.routers.users import get_user_by_username
 from restrack.api.routers.worklists import create_worklist as api_create_worklist
 from restrack.api.routers.worklists import (
     get_all_worklists,
-    get_unsubscribed_worklists,
     get_user_worklists,
     get_worklist_stats,
 )
@@ -409,20 +408,32 @@ async def subscription_manager(
         logger = logging.getLogger(__name__)
         logger.debug(f"Loading subscription manager for user ID: {current_user.id}")
 
-        available_worklists = get_unsubscribed_worklists(current_user.id, session)
-        logger.debug(f"Found {len(available_worklists)} available worklists")
-
+        all_worklists = get_all_worklists(session)
+        user_worklists = {w.id for w in get_user_worklists(current_user.id, session)}
+        # Annotate each worklist with subscription status
+        worklists_with_status = []
+        for w in all_worklists:
+            worklists_with_status.append(
+                {
+                    "id": w.id,
+                    "name": w.name,
+                    "description": w.description,
+                    "subscribed": w.id in user_worklists,
+                }
+            )
         return templates.TemplateResponse(
             "components/subscription_manager.html",
             {
                 "request": request,
-                "worklists": available_worklists,
+                "all_worklists": worklists_with_status,
                 "user": current_user,
             },
         )
     except Exception as e:
         logging.error(f"Error loading subscription manager: {str(e)}")
-        return f"<div class='alert alert-danger'>Error loading available worklists: {str(e)}</div>"
+        return (
+            f"<div class='alert alert-danger'>Error loading worklists: {str(e)}</div>"
+        )
 
 
 @app.get("/worklists/copy-manager")
@@ -488,8 +499,10 @@ async def create_user(
     # Password requirements
     pw_pattern = r"^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
     if not re.match(pw_pattern, password):
-        return ("<div class='alert alert-danger'>Password must be at least 8 characters, "
-                "contain an uppercase letter, a number, and a special character.</div>")
+        return (
+            "<div class='alert alert-danger'>Password must be at least 8 characters, "
+            "contain an uppercase letter, a number, and a special character.</div>"
+        )
 
     # Repeat password check
     if password != repeat_password:
@@ -497,7 +510,12 @@ async def create_user(
 
     try:
         hashed_password = hash_password(password)
-        user = UserModel(username=username, email=email, password=hashed_password, must_change_password=True)
+        user = UserModel(
+            username=username,
+            email=email,
+            password=hashed_password,
+            must_change_password=True,
+        )
         created_user = api_create_user(user, session)
         return f"<div class='alert alert-success'>User '{created_user.username}' created successfully!</div>"
     except HTTPException as e:
@@ -566,10 +584,14 @@ async def worklist_stats(
 
 
 @app.get("/change-password", response_class=HTMLResponse)
-async def change_password_form(request: Request, current_user: User = Depends(get_current_user)):
+async def change_password_form(
+    request: Request, current_user: User = Depends(get_current_user)
+):
     if not current_user:
         return RedirectResponse(url="/login", status_code=302)
-    return templates.TemplateResponse("change_password.html", {"request": request, "user": current_user})
+    return templates.TemplateResponse(
+        "change_password.html", {"request": request, "user": current_user}
+    )
 
 
 @app.post("/change-password", response_class=HTMLResponse)
@@ -588,22 +610,35 @@ async def change_password(
     if not verify_password(current_user.username, old_password, session):
         return templates.TemplateResponse(
             "change_password.html",
-            {"request": request, "user": current_user, "error": "Old password is incorrect."},
+            {
+                "request": request,
+                "user": current_user,
+                "error": "Old password is incorrect.",
+            },
         )
 
     # Password requirements
     import re
+
     pw_pattern = r"^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
     if not re.match(pw_pattern, new_password):
         return templates.TemplateResponse(
             "change_password.html",
-            {"request": request, "user": current_user, "error": "Password must be at least 8 characters, contain an uppercase letter, a number, and a special character."},
+            {
+                "request": request,
+                "user": current_user,
+                "error": "Password must be at least 8 characters, contain an uppercase letter, a number, and a special character.",
+            },
         )
 
     if new_password != repeat_password:
         return templates.TemplateResponse(
             "change_password.html",
-            {"request": request, "user": current_user, "error": "Passwords do not match."},
+            {
+                "request": request,
+                "user": current_user,
+                "error": "Passwords do not match.",
+            },
         )
 
     # Update password and must_change_password flag
@@ -615,12 +650,20 @@ async def change_password(
         session.commit()
         return templates.TemplateResponse(
             "change_password.html",
-            {"request": request, "user": db_user, "success": "Password changed successfully."},
+            {
+                "request": request,
+                "user": db_user,
+                "success": "Password changed successfully.",
+            },
         )
     except Exception as e:
         return templates.TemplateResponse(
             "change_password.html",
-            {"request": request, "user": current_user, "error": f"Error changing password: {str(e)}"},
+            {
+                "request": request,
+                "user": current_user,
+                "error": f"Error changing password: {str(e)}",
+            },
         )
 
 

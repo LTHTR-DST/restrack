@@ -1,12 +1,12 @@
 <!-- Debug info: Component loaded -->
-<div class="debug-info small text-muted mb-2">Component loaded. {{ worklists|length if worklists else 0 }} worklists
-    available.</div>
+<div class="debug-info small text-muted mb-2">Component loaded. {{ all_worklists|length if all_worklists else 0 }}
+    worklists available.</div>
 
-{% if worklists %}
 <div class="mb-3">
-    <label class="form-label">Available Worklists</label>
-    <div class="list-group" style="max-height: 200px; overflow-y: auto;">
-        {% for worklist in worklists %}
+    <h6 class="mb-3">Subscribe/Unsubscribe Worklists</h6>
+    <div class="list-group" style="max-height: 350px; overflow-y: auto;">
+        {% if all_worklists %}
+        {% for worklist in all_worklists %}
         <div class="list-group-item d-flex justify-content-between align-items-center">
             <div>
                 <strong>{{ worklist.name }}</strong>
@@ -14,12 +14,19 @@
                 <br><small class="text-muted">{{ worklist.description }}</small>
                 {% endif %}
             </div>
-            <button class="btn btn-sm btn-outline-primary" onclick="toggleSubscription({{ worklist.id }}, true)">
-                <i class="bi bi-plus"></i>
-                Subscribe
+            <button
+                class="btn btn-sm {% if worklist.subscribed %}btn-outline-danger{% else %}btn-outline-primary{% endif %}"
+                onclick="toggleSubscription({{ worklist.id }}, {{ 'false' if worklist.subscribed else 'true' }})">
+                <i class="bi {% if worklist.subscribed %}bi-x{% else %}bi-plus{% endif %}"></i>
+                {% if worklist.subscribed %}Unsubscribe{% else %}Subscribe{% endif %}
             </button>
         </div>
         {% endfor %}
+        {% else %}
+        <div class="text-center text-muted py-2">
+            <small>No worklists available.</small>
+        </div>
+        {% endif %}
     </div>
 </div>
 <div class="mt-2">
@@ -29,14 +36,3 @@
         Refresh List
     </button>
 </div>
-{% else %}
-<div class="text-center text-muted">
-    <p>No worklists available to subscribe to.</p>
-    <p><small>You are subscribed to all available worklists</small></p>
-    <button class="btn btn-sm btn-outline-secondary" hx-get="/worklists/subscription-manager"
-        hx-target="#subscription-manager">
-        <i class="bi bi-arrow-clockwise"></i>
-        Refresh List
-    </button>
-</div>
-{% endif %}
