@@ -667,5 +667,28 @@ async def change_password(
         )
 
 
+@app.get("/worklists/copy-to-selector")
+async def copy_to_worklist_selector(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_app_db_session),
+):
+    """Get copy-to-worklist selector component"""
+    try:
+        # Get all worklists except the current one
+        worklists = get_all_worklists(session)
+        
+        return templates.TemplateResponse(
+            "components/copy_to_worklist.html",
+            {
+                "request": request,
+                "worklists": worklists,
+                "user": current_user,
+            },
+        )
+    except Exception as e:
+        return f"<div class='alert alert-danger'>Error loading worklist selector: {str(e)}</div>"
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)
