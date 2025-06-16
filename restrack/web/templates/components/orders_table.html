@@ -6,7 +6,6 @@
                 <th style="width: 40px;">
                     <input type="checkbox" id="select-all" class="form-check-input">
                 </th>
-                <th>Order ID</th>
                 <th>Patient ID</th>
                 <th>Order Date</th>
                 <th>Investigation</th>
@@ -39,9 +38,12 @@
                 <td>
                     <input type="checkbox" class="form-check-input order-checkbox" value="{{ order.order_id }}">
                 </td>
-                <td>{{ order.order_id }}</td>
-                <td>{{ patient_id }}</td>
-                <td>{{ order.event_datetime.strftime('%Y-%m-%d %H:%M') if order.event_datetime else 'N/A' }}</td>
+                <td>
+                    <a href="#" onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ patient_id }}', {target: '#orders-table'})">
+                        {{ patient_id }}
+                    </a>
+                </td>
+                <td>{{ order.event_datetime.strftime('%d/%m/%Y %H:%M') if order.event_datetime else 'N/A' }}</td>
                 <td>
                     <strong>{{ order.proc_name or 'Unknown' }}</strong>
                     {% if order.measurement_concept_name and order.measurement_concept_name != order.proc_name %}
@@ -51,7 +53,10 @@
                 <td>
                     {% if item.system_status_text %}
                     <span class="badge bg-{{ item.system_status_class }}"
-                        title="Status: {{ item.system_status_text }} ({{ item.system_status }}){% if order.in_progress %} | In progress: {{ order.in_progress.strftime('%Y-%m-%d') }}{% endif %}{% if order.partial %} | Partial: {{ order.partial.strftime('%Y-%m-%d') }}{% endif %}{% if order.complete %} | Complete: {{ order.complete.strftime('%Y-%m-%d') }}{% endif %}">
+                        title="Status: {{ item.system_status_text }} ({{ item.system_status }})
+                        {%- if order.in_progress %} | In progress: {{ order.in_progress.strftime('%d/%m/%Y') }}{% endif -%}
+                        {%- if order.partial %} | Partial: {{ order.partial.strftime('%d/%m/%Y') }}{% endif -%}
+                        {%- if order.complete %} | Complete: {{ order.complete.strftime('%d/%m/%Y') }}{% endif -%}">
                         {{ item.system_status_text }}
                     </span>
                     {% else %}
@@ -91,14 +96,12 @@
                 <td>
                     <input type="checkbox" class="form-check-input order-checkbox" value="{{ order.order_id }}">
                 </td>
-                <td>{{ order.order_id }}</td>
                 <td>
-                    <a href="#"
-                        onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ order.patient_id }}', {target: '#orders-table'})">
+                    <a href="#" onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ order.patient_id }}', {target: '#orders-table'})">
                         {{ order.patient_id }}
                     </a>
                 </td>
-                <td>{{ order.event_datetime.strftime('%Y-%m-%d %H:%M') if order.event_datetime else 'N/A' }}</td>
+                <td>{{ order.event_datetime.strftime('%d/%m/%Y %H:%M') if order.event_datetime else 'N/A' }}</td>
                 <td>
                     <strong>{{ order.proc_name or 'Unknown' }}</strong>
                     {% if order.measurement_concept_name and order.measurement_concept_name != order.proc_name %}
@@ -108,7 +111,10 @@
                 <td>
                     {% if item.system_status_text %}
                     <span class="badge bg-{{ item.system_status_class }}"
-                        title="Status: {{ item.system_status_text }} ({{ item.system_status }}){% if order.in_progress %} | In progress: {{ order.in_progress.strftime('%Y-%m-%d') }}{% endif %}{% if order.partial %} | Partial: {{ order.partial.strftime('%Y-%m-%d') }}{% endif %}{% if order.complete %} | Complete: {{ order.complete.strftime('%Y-%m-%d') }}{% endif %}">
+                        title="Status: {{ item.system_status_text }} ({{ item.system_status }})
+                        {%- if order.in_progress %} | In progress: {{ order.in_progress.strftime('%d/%m/%Y') }}{% endif -%}
+                        {%- if order.partial %} | Partial: {{ order.partial.strftime('%d/%m/%Y') }}{% endif -%}
+                        {%- if order.complete %} | Complete: {{ order.complete.strftime('%d/%m/%Y') }}{% endif -%}">
                         {{ item.system_status_text }}
                     </span>
                     {% else %}
