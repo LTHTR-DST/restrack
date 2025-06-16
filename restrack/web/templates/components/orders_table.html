@@ -1,5 +1,5 @@
 {% if orders %}
-<div class="table-responsive">
+<div class="table-responsive" {% if patient_id %}data-view-type="patient-orders"{% endif %}>
     <table class="table table-sm orders-table">
         <thead>
             <tr>
@@ -22,7 +22,10 @@
             <tr class="table-secondary">
                 <td colspan="9">
                     <strong> <a href="#"
-                            onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ patient_id }}', {target: '#orders-table'})">
+                            hx-get="/orders/patient?patient_id={{ patient_id }}"
+                            hx-target="#orders-table"
+                            hx-trigger="click"
+                            onclick="toggleWorklistActions(false); currentWorklistId = null;">
                             Patient ID: {{ patient_id }}
                         </a>
                     </strong>
@@ -39,7 +42,11 @@
                     <input type="checkbox" class="form-check-input order-checkbox" value="{{ order.order_id }}">
                 </td>
                 <td>
-                    <a href="#" onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ patient_id }}', {target: '#orders-table'})">
+                    <a href="#" 
+                        hx-get="/orders/patient?patient_id={{ patient_id }}"
+                        hx-target="#orders-table"
+                        hx-trigger="click"
+                        onclick="toggleWorklistActions(false); currentWorklistId = null;">
                         {{ patient_id }}
                     </a>
                 </td>
@@ -160,6 +167,49 @@
         {% endif %}
     </small>
 </div>
+
+{% if worklist_id %}
+<!-- Action buttons row - Only shown for worklist views -->
+<div id="worklist-actions" class="row mt-3">
+    <div class="col-md-2">
+        <label class="form-label">Status Action</label>
+        <select class="form-select" id="status-select" onchange="updateOrderStatus()">
+            <option value="">Select status...</option>
+            <option value="Secretary seen">Secretary seen</option>
+            <option value="Clinician notified">Clinician notified</option>
+            <option value="Action taken by clinician">Action taken by clinician</option>
+            <option value="No action required">No action required</option>
+            <option value="Awaiting advice from another clinician">Awaiting advice from another clinician</option>
+            <option value="Awaiting MDT outcome">Awaiting MDT outcome</option>
+            <option value="All actions complete">All actions complete</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Add Note</label>
+        <div class="input-group">
+            <input type="text" class="form-control" id="note-input" placeholder="Enter note...">
+            <button class="btn btn-success" onclick="addNote()">
+                <i class="bi bi-plus"></i>
+                Add Note
+            </button>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div id="copy-to-worklist-container" hx-get="/worklists/copy-to-selector" hx-trigger="load">
+            <!-- Will be populated by HTMX -->
+        </div>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">&nbsp;</label>
+        <div>
+            <button class="btn btn-danger w-100" onclick="removeFromWorklist()">
+                <i class="bi bi-trash"></i>
+                Remove orders from worklist
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% else %}
 <div class="text-center mt-5">

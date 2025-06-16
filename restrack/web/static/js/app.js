@@ -31,6 +31,12 @@ function setupHtmxEvents() {
         // Reinitialize any components after content swap
         initializeTableCheckboxes();
         updateAddToWorklistButton();
+        
+        // Check if the swapped content is a patient orders table
+        if (event.detail.target.id === 'orders-table') {
+            const isPatientView = event.detail.target.querySelector('[data-view-type="patient-orders"]') !== null;
+            toggleWorklistActions(!isPatientView && currentWorklistId);
+        }
     });
 }
 
@@ -46,11 +52,28 @@ function selectWorklist(worklistId, worklistName) {
     });
     document.querySelector(`[data-worklist-id="${worklistId}"]`).classList.add('active');
 
+    // Show worklist actions since we're viewing a worklist
+    toggleWorklistActions(true);
+
     // Load orders for this worklist
     htmx.ajax('GET', `/worklists/${worklistId}/orders`, { target: '#orders-table' });
 
     // Show toast notification instead of alert
     showToast(`Selected worklist: ${worklistName}`, 'info');
+}
+
+// Function to show/hide worklist actions
+function toggleWorklistActions(show) {
+    const actionsDiv = document.getElementById('worklist-actions');
+    if (actionsDiv) {
+        if (show) {
+            actionsDiv.classList.remove('d-none');
+            actionsDiv.classList.add('d-flex');
+        } else {
+            actionsDiv.classList.remove('d-flex');
+            actionsDiv.classList.add('d-none');
+        }
+    }
 }
 
 // Order selection handling
