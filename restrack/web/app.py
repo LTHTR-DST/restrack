@@ -293,15 +293,20 @@ async def worklist_orders(
             }
             combined_orders.append(order_info)
 
-        # Sort orders by patient_id for grouping
-        combined_orders.sort(key=lambda x: x["order"].patient_id)
+        # Sort orders by patient_id and date (descending) for grouping
+        combined_orders.sort(key=lambda x: (x["order"].patient_id, x["order"].event_datetime or datetime.min), reverse=True)
 
         # Group orders by patient_id
         grouped_orders = {}
         for patient_id, group in groupby(
             combined_orders, key=lambda x: x["order"].patient_id
         ):
-            grouped_orders[patient_id] = list(group)
+            # Convert group to list and ensure it maintains the date sorting within the group
+            grouped_orders[patient_id] = sorted(
+                list(group),
+                key=lambda x: x["order"].event_datetime or datetime.min,
+                reverse=True
+            )
 
         return templates.TemplateResponse(
             "components/orders_table.html",
@@ -358,6 +363,12 @@ async def patient_orders(
                 "system_status_class": system_status_class,
             }
             combined_orders.append(order_info)
+            
+        # Sort orders by date descending
+        combined_orders.sort(
+            key=lambda x: x["order"].event_datetime or datetime.min,
+            reverse=True
+        )
 
         return templates.TemplateResponse(
             "components/orders_table.html",
