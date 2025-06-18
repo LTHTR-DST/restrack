@@ -53,7 +53,7 @@ def get_status_class(status_code: int) -> str:
         5: "warning",  # partial
         6: "success",  # complete
         7: "danger",  # cancelled
-        8: "success",  # resolved
+        8: "dark",  # resolved (changed from success to dark/black)
         9: "info",  # entered
         10: "danger",  # no show
         11: "danger",  # supplemental
