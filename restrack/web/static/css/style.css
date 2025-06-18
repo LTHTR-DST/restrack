@@ -7,6 +7,132 @@
     height: fit-content;
 }
 
+/* Worklist styles */
+.custom-worklist-list {
+    margin: -1rem;
+}
+
+.custom-worklist-list .worklist-item {
+    display: block;
+    padding: 0.75rem;
+    margin: 0.5rem;
+    text-decoration: none;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    color: #212529;
+    background-color: white;
+}
+
+.custom-worklist-list .worklist-item:hover {
+    background-color: #f8f9fa;
+    text-decoration: none;
+}
+
+.custom-worklist-list .worklist-item.selected {
+    border-color: #dc3545;
+    background-color: white;
+}
+
+.custom-worklist-list .worklist-item.selected .worklist-name {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.custom-worklist-list .worklist-name {
+    font-size: 0.95rem;
+}
+
+.custom-worklist-list .text-muted {
+    font-size: 0.85rem;
+}
+
+/* Custom worklist styles */
+.custom-worklist-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem; /* Reduced gap for compactness */
+    padding: 0.25rem; /* Less padding around the list */
+    margin: -0.5rem;  /* Less negative margin to match reduced padding */
+}
+
+.custom-worklist-list .worklist-item {
+    display: block;
+    padding: 0.35rem 0.5rem; /* Reduced padding for compactness */
+    color: #212529;
+    text-decoration: none;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: white;
+    margin: 0.1rem 0; /* Less margin between boxes */
+    transition: all 0.2s ease-in-out;
+}
+
+.custom-worklist-list .worklist-item:hover {
+    border-color: #c1c9d0;
+    background-color: #f8f9fa;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.custom-worklist-list .worklist-item.selected {
+    background-color: #fff;
+    border-color: #dc3545;
+    box-shadow: 0 2px 4px rgba(220,53,69,0.1);
+}
+
+.custom-worklist-list .worklist-item.selected .worklist-name {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.custom-worklist-list .worklist-name {
+    margin-right: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #212529;
+}
+
+.custom-worklist-list .text-muted {
+    color: rgba(33, 37, 41, 0.65) !important;
+    font-size: 0.875rem;
+}
+
+.custom-worklist-list .worklist-item.selected .worklist-name {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.custom-worklist-list .worklist-name {
+    margin-right: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-worklist-list .text-muted {
+    color: rgba(33, 37, 41, 0.65) !important;
+    font-size: 0.875rem;
+}
+
+.sidebar .compact-list .text-muted {
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+/* Bootstrap tooltip customization */
+.tooltip {
+    font-size: 0.8rem;
+}
+
+.tooltip-inner {
+    max-width: 300px;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 .loading {
     position: fixed;
     top: 50%;

@@ -1,9 +1,11 @@
-<div class="list-group list-group-flush">
+<div class="custom-worklist-list">
     {% for worklist in worklists %}
-    <a href="#" class="list-group-item list-group-item-action worklist-item" data-worklist-id="{{ worklist.id }}"
-        onclick="selectWorklist({{ worklist.id }}, '{{ worklist.name }}')">
-        <div class="d-flex w-100 justify-content-between">
-            <h6 class="mb-1">{{ worklist.name }}</h6>
+    <a href="#" class="worklist-item" 
+        data-worklist-id="{{ worklist.id }}"
+        onclick="selectWorklist({{ worklist.id }}, '{{ worklist.name }}')"
+        {% if worklist.description %}data-bs-toggle="tooltip" title="{{ worklist.description }}"{% endif %}>
+        <div class="d-flex w-100 justify-content-between align-items-center">
+            <span class="worklist-name">{{ worklist.name }}</span>
             <div class="text-muted small" id="stats-{{ worklist.id }}">
                 {% if fast_load %}
                 <span class="loading-stats"><i class="bi bi-three-dots"></i></span>
@@ -16,9 +18,6 @@
                 {% endif %}
             </div>
         </div>
-        {% if worklist.description %}
-        <p class="mb-1 text-muted small">{{ worklist.description }}</p>
-        {% endif %}
     </a>
     {% endfor %}
 
@@ -33,6 +32,17 @@
 <script>
     // Store current user ID for JavaScript functions
     window.currentUserId = {{ user.id }};
+
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize all tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl, {
+                boundary: document.body
+            });
+        });
+    });
 
     {% if fast_load %}
     // Load stats asynchronously for each worklist

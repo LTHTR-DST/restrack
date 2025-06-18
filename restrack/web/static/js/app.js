@@ -46,11 +46,11 @@ function selectWorklist(worklistId, worklistName) {
     selectedOrders.clear();
     updateAddToWorklistButton();
 
-    // Update active worklist in sidebar
+    // Update selected worklist in sidebar
     document.querySelectorAll('.worklist-item').forEach(item => {
-        item.classList.remove('active');
+        item.classList.remove('selected');
     });
-    document.querySelector(`[data-worklist-id="${worklistId}"]`).classList.add('active');
+    document.querySelector(`[data-worklist-id="${worklistId}"]`).classList.add('selected');
 
     // Show worklist actions since we're viewing a worklist
     toggleWorklistActions(true);
