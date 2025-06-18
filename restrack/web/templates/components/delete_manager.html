@@ -1,7 +1,7 @@
 {% if worklists %}
 <div class="mb-3">
     <label class="form-label">Select worklist to delete</label>
-    <select class="form-select" id="delete-worklist-select">
+    <select class="form-select" id="delete-worklist-select" style="border:2px solid #dc3545;">
         <option value="">Choose a worklist...</option>
         {% for worklist in worklists %}
         <option value="{{ worklist.id }}">{{ worklist.name }} (ID: {{ worklist.id }})</option>
@@ -28,11 +28,17 @@
             return;
         }
 
-        fetch(`/api/v1/delete_worklist/${worklistId}`, {
+        fetch(`/api/v1/worklists/${worklistId}`, {
             method: 'DELETE'
         })
-            .then(response => response.json())
-            .then(data => {
+            .then(async response => {
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = { status: 'error', message: 'Invalid JSON', raw: await response.text() };
+                }
+                console.log('Delete worklist response:', response.status, data);
                 if (data.status === 'success') {
                     showToast(data.message, 'success');
                     select.value = '';
@@ -52,7 +58,5 @@
     }
 </script>
 {% else %}
-<div class="text-center text-muted">
-    <p>No worklists available to delete.</p>
-</div>
+<div class="alert alert-info">No worklists available to delete.</div>
 {% endif %}
