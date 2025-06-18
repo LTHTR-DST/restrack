@@ -659,14 +659,7 @@ async def change_password(
         db_user.must_change_password = False
         session.add(db_user)
         session.commit()
-        return templates.TemplateResponse(
-            "change_password.html",
-            {
-                "request": request,
-                "user": db_user,
-                "success": "Password changed successfully.",
-            },
-        )
+        return RedirectResponse(url="/", status_code=302)
     except Exception as e:
         return templates.TemplateResponse(
             "change_password.html",
