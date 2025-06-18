@@ -398,8 +398,8 @@ async def create_worklist(
         worklist = WorkList(
             name=name, description=description, created_by=current_user.id
         )
-        created_worklist = api_create_worklist(worklist, session)
-        return f"<div class='alert alert-success'>Worklist '{created_worklist.name}' created successfully!</div>"
+        api_create_worklist(worklist, session)
+        return f"<div class='alert alert-success'>Worklist '{name}' created successfully!</div>"
     except HTTPException as e:
         return f"<div class='alert alert-danger'>{e.detail}</div>"
     except Exception as e:
