@@ -10,8 +10,9 @@
                 <th>Order Date</th>
                 <th>Investigation</th>
                 <th>Order Status</th>
-                <th>User Status</th>
+                <th style="width: 80px;">User Status</th>
                 <th>Note</th>
+                <th style="width: 80px;">Action</th>
                 <th>Priority</th>
             </tr>
         </thead>
@@ -86,6 +87,14 @@
                     {% endif %}
                 </td>
                 <td>
+                    <button class="btn btn-outline-primary btn-sm" 
+                            onclick="populateNoteField(this.getAttribute('data-note'), this)"
+                            data-note="{{ status_info.note if status_info.note else '' }}"
+                            style="white-space: nowrap;">
+                        {% if status_info.note %}Edit Note{% else %}Add Note{% endif %}
+                    </button>
+                </td>
+                <td>
                     {% if order.type_concept_name %}
                     <small class="text-muted">{{ order.type_concept_name }}</small>
                     {% else %}
@@ -144,6 +153,14 @@
                     {% endif %}
                 </td>
                 <td>
+                    <button class="btn btn-outline-primary btn-sm" 
+                            onclick="populateNoteField(this.getAttribute('data-note'), this)"
+                            data-note="{{ status_info.note if status_info.note else '' }}"
+                            style="white-space: nowrap;">
+                        {% if status_info.note %}Edit Note{% else %}Add Note{% endif %}
+                    </button>
+                </td>
+                <td>
                     {% if order.type_concept_name %}
                     <small class="text-muted">{{ order.type_concept_name }}</small>
                     {% else %}
@@ -195,7 +212,7 @@
     <div class="col-md-4">
         <label class="form-label">Add Note</label>
         <div class="input-group">
-            <input type="text" class="form-control" id="note-input" placeholder="Enter note...">
+            <textarea class="form-control" id="note-input" placeholder="Enter note..." rows="2"></textarea>
             <button class="btn btn-success" onclick="addNote()">
                 <i class="bi bi-plus"></i>
                 Add Note
@@ -230,3 +247,28 @@
     {% endif %}
 </div>
 {% endif %}
+
+<script>
+function populateNoteField(noteText, buttonElement) {
+    // Find the row that contains this button
+    const row = buttonElement.closest('tr');
+    if (row) {
+        // Find the checkbox in this row and check it
+        const checkbox = row.querySelector('.order-checkbox');
+        if (checkbox && !checkbox.checked) {
+            checkbox.checked = true;
+            // Trigger the change event to update the UI and selection state
+            checkbox.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    const noteInput = document.getElementById('note-input');
+    if (noteInput) {
+        noteInput.value = noteText || '';
+        // Scroll to the note input area
+        noteInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Focus on the textarea
+        noteInput.focus();
+    }
+}
+</script>

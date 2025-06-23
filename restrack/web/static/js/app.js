@@ -197,8 +197,10 @@ function updateActionButtons() {
     const statusSelect = document.getElementById('status-select');
     const noteInput = document.getElementById('note-input');
 
+    // Status select should be disabled when no orders are selected (for bulk operations)
     if (statusSelect) statusSelect.disabled = !hasSelection;
-    if (noteInput) noteInput.disabled = !hasSelection;
+    // Note input should remain enabled for individual note editing
+    if (noteInput) noteInput.disabled = false;
 
     // Update button states
     const actionButtons = document.querySelectorAll('.action-btn');
