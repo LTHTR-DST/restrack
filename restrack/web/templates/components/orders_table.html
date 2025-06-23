@@ -25,7 +25,7 @@
                             hx-get="/orders/patient?patient_id={{ patient_id }}"
                             hx-target="#orders-table"
                             hx-trigger="click"
-                            onclick="toggleWorklistActions(false); currentWorklistId = null;">
+                            onclick="toggleWorklistActions(false);">
                             Patient ID: {{ patient_id }}
                         </a>
                     </strong>
@@ -46,7 +46,7 @@
                         hx-get="/orders/patient?patient_id={{ patient_id }}"
                         hx-target="#orders-table"
                         hx-trigger="click"
-                        onclick="toggleWorklistActions(false); currentWorklistId = null;">
+                        onclick="toggleWorklistActions(false);">
                         {{ patient_id }}
                     </a>
                 </td>
@@ -104,7 +104,7 @@
                     <input type="checkbox" class="form-check-input order-checkbox" value="{{ order.order_id }}">
                 </td>
                 <td>
-                    <a href="#" onclick="htmx.ajax('GET', '/orders/patient?patient_id={{ order.patient_id }}', {target: '#orders-table'})">
+                    <a href="#" onclick="toggleWorklistActions(false); htmx.ajax('GET', '/orders/patient?patient_id={{ order.patient_id }}', {target: '#orders-table'})">
                         {{ order.patient_id }}
                     </a>
                 </td>

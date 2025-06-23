@@ -21,7 +21,7 @@ from restrack.api.main import (
 )
 from restrack.api.routers.orders import get_patient_orders, get_worklist_orders
 from restrack.api.routers.users import create_user as api_create_user
-from restrack.api.routers.users import get_user_by_username
+from restrack.api.routers.users import get_user_by_username, get_all_users, delete_user as api_delete_user
 from restrack.api.routers.worklists import create_worklist as api_create_worklist
 from restrack.api.routers.worklists import (
     get_all_worklists,
@@ -486,6 +486,23 @@ async def delete_manager(
     return templates.TemplateResponse(
         "components/delete_manager.html",
         {"request": request, "worklists": all_worklists, "user": current_user},
+    )
+
+
+@app.get("/users/delete-manager")
+async def delete_user_manager(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_app_db_session),
+):
+    """Get delete user manager component (admin only)"""
+    if current_user.username != "admin":
+        return "<div class='alert alert-danger'>Access denied</div>"
+
+    all_users = get_all_users(session)
+    return templates.TemplateResponse(
+        "components/delete_user_manager.html",
+        {"request": request, "users": all_users, "user": current_user},
     )
 
 

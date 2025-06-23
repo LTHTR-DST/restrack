@@ -71,6 +71,10 @@
                             <h6 class="mb-0">Add Orders</h6>
                         </div>
                         <div class="card-body">
+                            <div class="alert alert-info alert-sm mb-2" id="workflow-hint">
+                                <small><strong>Step 1:</strong> Select a worklist above<br>
+                                <strong>Step 2:</strong> Search for patient orders below</small>
+                            </div>
                             <form hx-get="/orders/patient" hx-target="#orders-table" hx-indicator=".loading">
                                 <div class="mb-2">
                                     <label for="patient-id" class="form-label">Patient ID</label>

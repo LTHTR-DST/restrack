@@ -2,12 +2,17 @@
 
 let selectedOrders = new Set();
 let currentWorklistId = null;
+let currentWorklistName = null;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function () {
     console.log('DOM Content Loaded');
     // Setup htmx event listeners
     setupHtmxEvents();
+    
+    // Initialize button states
+    updateAddToWorklistButton();
+    updateActionButtons();
     
     // Check if button exists on page load
     const btn = document.getElementById('toggle-complete-btn');
@@ -39,18 +44,27 @@ function setupHtmxEvents() {
         // Reinitialize any components after content swap
         initializeTableCheckboxes();
         updateAddToWorklistButton();
+        updateActionButtons();
         
         // Check if the swapped content is a patient orders table
         if (event.detail.target.id === 'orders-table') {
             const isPatientView = event.detail.target.querySelector('[data-view-type="patient-orders"]') !== null;
-            toggleWorklistActions(!isPatientView && currentWorklistId);
+            // Only hide worklist actions if it's a patient view, but don't reset currentWorklistId
+            // Users can still add orders to their previously selected worklist
+            if (isPatientView) {
+                toggleWorklistActions(false);
+            } else if (currentWorklistId) {
+                toggleWorklistActions(true);
+            }
         }
     });
 }
 
 // Worklist selection
 function selectWorklist(worklistId, worklistName) {
+    console.log('Selecting worklist:', worklistId, worklistName);
     currentWorklistId = worklistId;
+    currentWorklistName = worklistName;
     selectedOrders.clear();
     updateAddToWorklistButton();
 
@@ -68,6 +82,9 @@ function selectWorklist(worklistId, worklistName) {
 
     // Show toast notification instead of alert
     showToast(`Selected worklist: ${worklistName}`, 'info');
+
+    // Update workflow hint
+    updateWorkflowHint();
 }
 
 // Function to show/hide worklist actions
@@ -86,7 +103,10 @@ function toggleWorklistActions(show) {
 
 // Order selection handling
 function initializeTableCheckboxes() {
+    console.log('Initializing table checkboxes...');
     const checkboxes = document.querySelectorAll('.order-checkbox');
+    console.log('Found', checkboxes.length, 'order checkboxes');
+    
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function () {
             const orderId = parseInt(this.value);
@@ -95,9 +115,11 @@ function initializeTableCheckboxes() {
             if (this.checked) {
                 selectedOrders.add(orderId);
                 row.classList.add('table-active');
+                console.log('Order selected:', orderId);
             } else {
                 selectedOrders.delete(orderId);
                 row.classList.remove('table-active');
+                console.log('Order deselected:', orderId);
             }
 
             updateAddToWorklistButton();
@@ -133,7 +155,39 @@ function initializeTableCheckboxes() {
 function updateAddToWorklistButton() {
     const addBtn = document.getElementById('add-to-worklist-btn');
     if (addBtn) {
-        addBtn.disabled = selectedOrders.size === 0 || !currentWorklistId;
+        const hasOrders = selectedOrders.size > 0;
+        const hasWorklist = !!currentWorklistId;
+        const shouldEnable = hasOrders && hasWorklist;
+        
+        console.log('Button state update:', {
+            hasOrders,
+            hasWorklist,
+            currentWorklistId,
+            selectedOrdersCount: selectedOrders.size,
+            shouldEnable
+        });
+        
+        addBtn.disabled = !shouldEnable;
+        
+        // Update button text and style based on state
+        const icon = addBtn.querySelector('i');
+        const textNode = addBtn.childNodes[addBtn.childNodes.length - 1];
+        
+        if (!hasWorklist) {
+            addBtn.className = 'btn btn-sm btn-secondary mt-2';
+            addBtn.title = 'Select a worklist first';
+            if (textNode) textNode.textContent = ' Select Worklist First';
+        } else if (!hasOrders) {
+            addBtn.className = 'btn btn-sm btn-success mt-2';
+            addBtn.title = 'Select orders to add';
+            const worklistText = currentWorklistName ? ` Add to ${currentWorklistName}` : ' Add to Worklist';
+            if (textNode) textNode.textContent = worklistText;
+        } else {
+            addBtn.className = 'btn btn-sm btn-success mt-2';
+            addBtn.title = `Add ${selectedOrders.size} orders to ${currentWorklistName || 'worklist'}`;
+            const worklistText = currentWorklistName ? ` Add ${selectedOrders.size} to ${currentWorklistName}` : ` Add ${selectedOrders.size} to Worklist`;
+            if (textNode) textNode.textContent = worklistText;
+        }
     }
 }
 
@@ -155,8 +209,13 @@ function updateActionButtons() {
 
 // Add selected orders to current worklist
 function addSelectedToWorklist() {
-    if (selectedOrders.size === 0 || !currentWorklistId) {
-        showToast('Please select orders and a worklist', 'warning');
+    if (!currentWorklistId) {
+        showToast('Please select a worklist from the sidebar first', 'warning');
+        return;
+    }
+    
+    if (selectedOrders.size === 0) {
+        showToast('Please select orders to add', 'warning');
         return;
     }
 
@@ -492,10 +551,10 @@ function toggleShowComplete() {
             console.log(`Row ${index}: No badge found in Order Status cell`);
             return;
         }
-        // Check if the badge text is exactly 'complete' (case-insensitive)
+        // Check if the badge text is 'complete' or 'supplemental' (case-insensitive)
         const statusText = badge.textContent.trim().toLowerCase();
         console.log(`Row ${index}: Status text = "${statusText}"`);
-        const isComplete = statusText === 'complete';
+        const isComplete = statusText === 'complete' || statusText === 'supplemental';
         
         if (isCurrentlyShowingComplete) {
             // Currently showing only complete, so show all rows
@@ -560,3 +619,17 @@ window.debugShowCompleteButton = function() {
     }
     console.log('==================');
 };
+
+// Update workflow hint based on the current state
+function updateWorkflowHint() {
+    const hint = document.getElementById('workflow-hint');
+    if (hint) {
+        if (!currentWorklistId) {
+            hint.className = 'alert alert-warning alert-sm mb-2';
+            hint.innerHTML = '<small><strong>Step 1:</strong> Select a worklist above<br><strong>Step 2:</strong> Search for patient orders below</small>';
+        } else {
+            hint.className = 'alert alert-success alert-sm mb-2';
+            hint.innerHTML = '<small><i class="bi bi-check-circle"></i> Worklist selected<br><strong>Next:</strong> Search for patient orders and select them</small>';
+        }
+    }
+}

@@ -1,0 +1,61 @@
+{% if users %}
+<div class="mb-3">
+    <label class="form-label">Select user to delete</label>
+    <select class="form-select" id="delete-user-select" style="border:2px solid #dc3545;">
+        <option value="">Choose a user...</option>
+        {% for user in users %}
+        {% if user.username != 'admin' %}
+        <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
+        {% endif %}
+        {% endfor %}
+    </select>
+</div>
+<button class="btn btn-danger" onclick="deleteSelectedUser()">
+    <i class="bi bi-person-dash"></i>
+    Delete User
+</button>
+
+<script>
+    function deleteSelectedUser() {
+        const select = document.getElementById('delete-user-select');
+        const userId = select.value;
+        const userInfo = select.options[select.selectedIndex].text;
+
+        if (!userId) {
+            showToast('Please select a user to delete', 'warning');
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to COMPLETELY DELETE the user "${userInfo}"? This action cannot be undone!`)) {
+            return;
+        }
+
+        fetch(`/api/v1/users/${userId}`, {
+            method: 'DELETE'
+        })
+            .then(async response => {
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = { status: 'error', message: 'Invalid JSON', raw: await response.text() };
+                }
+                console.log('Delete user response:', response.status, data);
+                if (response.ok) {
+                    showToast('User deleted successfully', 'success');
+                    select.value = '';
+                    // Refresh the delete user manager to update the dropdown
+                    htmx.ajax('GET', '/users/delete-manager', { target: '#delete-user-manager' });
+                } else {
+                    showToast('Failed to delete user', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error deleting user', 'danger');
+            });
+    }
+</script>
+{% else %}
+<div class="alert alert-info">No users available to delete.</div>
+{% endif %}

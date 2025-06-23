@@ -15,6 +15,23 @@ from restrack.api.core import get_app_db_session, logger
 router = APIRouter(tags=["users"], prefix="/users")
 
 
+@router.get("/", response_model=list[UserSecure])
+def get_all_users(local_session: Session = Depends(get_app_db_session)):
+    """
+    Retrieve all users from the database.
+
+    Args:
+        local_session (Session): The database session dependency.
+
+    Returns:
+        list[UserSecure]: A list of all users.
+    """
+    with local_session as session:
+        statement = select(User)
+        users = session.exec(statement).all()
+        return users
+
+
 @router.post("/", response_model=UserSecure)
 def create_user(user: User, local_session: Session = Depends(get_app_db_session)):
     """

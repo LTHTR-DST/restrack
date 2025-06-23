@@ -150,7 +150,30 @@
                     <div class="col-md-6">
                         <div class="card">
                             <div class="card-header bg-danger text-white">
-                                <h6 class="mb-0">Delete Worklist</h6>
+                                <h6 class="mb-0 text-white">Delete User</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Warning: This will completely remove the user!
+                                </div>
+                                <div id="delete-user-manager">
+                                    <!-- Will be loaded via htmx -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <!-- Empty space for now -->
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0 text-white">Delete Worklist</h6>
                             </div>
                             <div class="card-body">
                                 <div class="alert alert-warning">
@@ -213,7 +236,8 @@
         {% if user.username == 'admin' %}
         if (event.target.getAttribute('data-bs-target') === '#admin') {
             console.log('Loading admin tab components...');
-            // Load delete manager for admin
+            // Load delete managers for admin
+            htmx.ajax('GET', '/users/delete-manager', { target: '#delete-user-manager' });
             htmx.ajax('GET', '/worklists/delete-manager', { target: '#delete-worklist-manager' });
         }
         {% endif %}
