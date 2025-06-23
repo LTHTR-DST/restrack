@@ -5,8 +5,16 @@ let currentWorklistId = null;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOM Content Loaded');
     // Setup htmx event listeners
     setupHtmxEvents();
+    
+    // Check if button exists on page load
+    const btn = document.getElementById('toggle-complete-btn');
+    console.log('Button exists on page load:', !!btn);
+    if (btn) {
+        console.log('Button text:', btn.textContent);
+    }
 });
 
 function setupHtmxEvents() {
@@ -447,3 +455,108 @@ function handleLogout(event) {
     // Navigate to the logout endpoint which will clear the token cookie
     window.location.href = '/logout';
 }
+
+// Toggle showing only complete orders or all orders
+function toggleShowComplete() {
+    console.log('toggleShowComplete called');
+    const btn = document.getElementById('toggle-complete-btn');
+    const table = document.querySelector('.orders-table');
+    console.log('Button found:', !!btn, 'Table found:', !!table);
+    if (!table || !btn) return;
+    
+    // Initialize the data attribute if it doesn't exist
+    if (!btn.dataset.showComplete) {
+        btn.dataset.showComplete = 'false';
+    }
+    
+    const isCurrentlyShowingComplete = btn.dataset.showComplete === 'true';
+    console.log('Currently showing complete:', isCurrentlyShowingComplete);
+    const rows = table.querySelectorAll('tbody tr');
+    console.log('Found', rows.length, 'rows');
+    
+    let processedRows = 0;
+    rows.forEach((row, index) => {
+        const tds = row.querySelectorAll('td');
+        console.log(`Row ${index}: ${tds.length} cells`);
+        if (tds.length < 5) {
+            // Likely a group header or non-order row, always show
+            row.style.display = '';
+            return;
+        }
+        // Find the Order Status cell (5th td)
+        const orderStatusCell = tds[4];
+        if (!orderStatusCell) return;
+        // Find the badge inside the Order Status cell
+        const badge = orderStatusCell.querySelector('.badge');
+        if (!badge) {
+            console.log(`Row ${index}: No badge found in Order Status cell`);
+            return;
+        }
+        // Check if the badge text is exactly 'complete' (case-insensitive)
+        const statusText = badge.textContent.trim().toLowerCase();
+        console.log(`Row ${index}: Status text = "${statusText}"`);
+        const isComplete = statusText === 'complete';
+        
+        if (isCurrentlyShowingComplete) {
+            // Currently showing only complete, so show all rows
+            row.style.display = '';
+        } else {
+            // Currently showing all, so show only complete
+            if (isComplete) {
+                row.style.display = '';
+                console.log(`Row ${index}: Showing (complete)`);
+            } else {
+                row.style.display = 'none';
+                console.log(`Row ${index}: Hiding (not complete)`);
+            }
+        }
+        processedRows++;
+    });
+    
+    console.log('Processed', processedRows, 'data rows');
+    
+    // Toggle the state and update button text
+    if (isCurrentlyShowingComplete) {
+        btn.textContent = 'Show Complete';
+        btn.dataset.showComplete = 'false';
+        console.log('Button updated to: Show Complete');
+    } else {
+        btn.textContent = 'Show All';
+        btn.dataset.showComplete = 'true';
+        console.log('Button updated to: Show All');
+    }
+}
+
+// Use event delegation for the Show Complete button
+console.log('Setting up event delegation for Show Complete button');
+document.addEventListener('click', function(event) {
+    console.log('Click detected on:', event.target.tagName, event.target.id, event.target.className);
+    const btn = event.target.closest('#toggle-complete-btn');
+    if (btn) {
+        console.log('Show Complete button clicked!');
+        event.preventDefault();
+        toggleShowComplete();
+    } else if (event.target.id === 'toggle-complete-btn') {
+        console.log('Direct click on toggle-complete-btn');
+        event.preventDefault();
+        toggleShowComplete();
+    }
+});
+
+// Debug function to check button status - call this from console
+window.debugShowCompleteButton = function() {
+    const btn = document.getElementById('toggle-complete-btn');
+    const table = document.querySelector('.orders-table');
+    console.log('=== DEBUG INFO ===');
+    console.log('Button exists:', !!btn);
+    console.log('Table exists:', !!table);
+    if (btn) {
+        console.log('Button text:', btn.textContent);
+        console.log('Button dataset:', btn.dataset);
+        console.log('Button onclick:', btn.onclick);
+    }
+    if (table) {
+        console.log('Table rows:', table.querySelectorAll('tbody tr').length);
+    }
+    console.log('==================');
+};

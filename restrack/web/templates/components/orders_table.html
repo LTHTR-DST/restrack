@@ -157,6 +157,14 @@
     </table>
 </div>
 
+{% if worklist_id %}
+<div class="row mb-2">
+    <div class="col-12 text-end">
+        <button id="toggle-complete-btn" class="btn btn-outline-primary btn-sm">Show Complete</button>
+    </div>
+</div>
+{% endif %}
+
 <div class="mt-3">
     <small class="text-muted">
         Total: {{ orders|length }} orders
@@ -222,13 +230,3 @@
     {% endif %}
 </div>
 {% endif %}
-
-<script>
-    // Initialize checkboxes after table loads
-    document.addEventListener('DOMContentLoaded', function () {
-        initializeTableCheckboxes();
-    });
-
-    // Call it immediately as well since this might be loaded via htmx
-    initializeTableCheckboxes();
-</script>
