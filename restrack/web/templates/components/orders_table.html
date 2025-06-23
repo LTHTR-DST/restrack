@@ -95,8 +95,16 @@
                     </button>
                 </td>
                 <td>
-                    {% if order.type_concept_name %}
-                    <small class="text-muted">{{ order.type_concept_name }}</small>
+                    {% if status_info.priority %}
+                        {% if status_info.priority == "2 Week Rule" %}
+                        <span class="badge bg-danger text-white">{{ status_info.priority }}</span>
+                        {% elif status_info.priority == "Urgent" %}
+                        <span class="badge bg-warning text-dark">{{ status_info.priority }}</span>
+                        {% elif status_info.priority == "Routine" %}
+                        <span class="badge bg-primary text-white">{{ status_info.priority }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary text-white">{{ status_info.priority }}</span>
+                        {% endif %}
                     {% else %}
                     <span class="text-muted">-</span>
                     {% endif %}
@@ -161,8 +169,16 @@
                     </button>
                 </td>
                 <td>
-                    {% if order.type_concept_name %}
-                    <small class="text-muted">{{ order.type_concept_name }}</small>
+                    {% if status_info.priority %}
+                        {% if status_info.priority == "2 Week Rule" %}
+                        <span class="badge bg-danger text-white">{{ status_info.priority }}</span>
+                        {% elif status_info.priority == "Urgent" %}
+                        <span class="badge bg-warning text-dark">{{ status_info.priority }}</span>
+                        {% elif status_info.priority == "Routine" %}
+                        <span class="badge bg-primary text-white">{{ status_info.priority }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary text-white">{{ status_info.priority }}</span>
+                        {% endif %}
                     {% else %}
                     <span class="text-muted">-</span>
                     {% endif %}
@@ -209,7 +225,7 @@
             <option value="All actions complete">All actions complete</option>
         </select>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label class="form-label">Add Note</label>
         <div class="input-group">
             <textarea class="form-control" id="note-input" placeholder="Enter note..." rows="2"></textarea>
@@ -219,7 +235,16 @@
             </button>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
+        <label class="form-label">Choose Priority</label>
+        <select class="form-select" id="priority-select" onchange="updateOrderPriority()">
+            <option value="">Select priority...</option>
+            <option value="2 Week Rule">2 Week Rule</option>
+            <option value="Urgent">Urgent</option>
+            <option value="Routine">Routine</option>
+        </select>
+    </div>
+    <div class="col-md-2">
         <div id="copy-to-worklist-container" hx-get="/worklists/copy-to-selector" hx-trigger="load">
             <!-- Will be populated by HTMX -->
         </div>

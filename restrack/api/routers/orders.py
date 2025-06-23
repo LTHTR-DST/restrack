@@ -22,7 +22,7 @@ router = APIRouter(tags=["orders"])
 
 @router.get(
     path="/worklist_orders/{worklist_id}",
-    response_model=Tuple[List[ORDER], List[Tuple[int, str, str]]],
+    response_model=Tuple[List[ORDER], List[Tuple[int, str, str, str]]],
 )
 def get_worklist_orders(
     worklist_id: int,
@@ -42,7 +42,7 @@ def get_worklist_orders(
     """
     with local_session as local:
         statement = select(
-            OrderWorkList.order_id, OrderWorkList.status, OrderWorkList.user_note
+            OrderWorkList.order_id, OrderWorkList.status, OrderWorkList.user_note, OrderWorkList.priority
         ).where(OrderWorkList.worklist_id == worklist_id)
 
     order_ids_and_status = local.exec(statement).fetchall()
@@ -256,6 +256,42 @@ def comment_orders(
             session.rollback()
             raise HTTPException(
                 status_code=500, detail=f"Failed to update order status: {str(e)}"
+            )
+
+
+@router.put("/update_priority/{orders_to_update}")
+def update_order_priority(
+    orders_to_update: str, local_session: Session = Depends(get_app_db_session)
+):
+    """
+    Updates the priority of orders in all worklists that contain them.
+
+    Args:
+        orders_to_update (str): JSON string containing priority and order_ids.
+        local_session (Session): The database session dependency.
+
+    Returns:
+        bool: True if successful.
+    """
+    priority_data = json.loads(orders_to_update)
+    with local_session as session:
+        try:
+            for order_id in priority_data["order_ids"]:
+                statement = select(OrderWorkList).where(
+                    OrderWorkList.order_id == order_id
+                )
+                # Update priority in all worklists for consistency
+                orders = session.exec(statement).all()
+                if orders:
+                    for order in orders:
+                        order.priority = priority_data["priority"]
+            session.commit()
+            return True
+
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(
+                status_code=500, detail=f"Failed to update order priority: {str(e)}"
             )
 
 

@@ -195,10 +195,13 @@ function updateActionButtons() {
     const hasSelection = selectedOrders.size > 0;
 
     const statusSelect = document.getElementById('status-select');
+    const prioritySelect = document.getElementById('priority-select');
     const noteInput = document.getElementById('note-input');
 
     // Status select should be disabled when no orders are selected (for bulk operations)
     if (statusSelect) statusSelect.disabled = !hasSelection;
+    // Priority select should be disabled when no orders are selected (for bulk operations)
+    if (prioritySelect) prioritySelect.disabled = !hasSelection;
     // Note input should remain enabled for individual note editing
     if (noteInput) noteInput.disabled = false;
 
@@ -282,6 +285,44 @@ function updateOrderStatus() {
         .catch(error => {
             console.error('Error:', error);
             showToast('Error updating order status', 'danger');
+        });
+}
+
+// Update order priority
+function updateOrderPriority() {
+    const prioritySelect = document.getElementById('priority-select');
+    const selectedPriority = prioritySelect.value;
+
+    if (!selectedPriority || selectedOrders.size === 0) {
+        showToast('Please select orders and a priority', 'warning');
+        return;
+    }
+
+    const orderIds = Array.from(selectedOrders);
+
+    fetch('/api/v1/update_priority/' + encodeURIComponent(JSON.stringify({
+        priority: selectedPriority,
+        order_ids: orderIds
+    })), {
+        method: 'PUT'
+    })
+        .then(response => {
+            if (response.ok) {
+                showToast(`Updated priority for ${orderIds.length} orders`, 'success');
+                prioritySelect.value = '';
+                selectedOrders.clear();
+                updateActionButtons();
+                // Refresh current worklist
+                if (currentWorklistId) {
+                    htmx.ajax('GET', `/worklists/${currentWorklistId}/orders`, { target: '#orders-table' });
+                }
+            } else {
+                showToast('Failed to update order priority', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error updating order priority', 'danger');
         });
 }
 

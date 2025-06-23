@@ -82,7 +82,7 @@ class OrderWorkList(SQLModel, table=True):
     order_id: int
     worklist_id: int = Field(foreign_key="worklist.id")
     status: str | None = Field(default="")
-    priority: int | None = Field(default=0)
+    priority: str | None = Field(default="")
     user_note: str | None = Field(default="")
 
 

@@ -266,7 +266,7 @@ async def worklist_orders(
         # Combine orders with their statuses
         order_dict = {order.order_id: order for order in orders}  # noqa ruff:f841
         status_dict = {
-            status[0]: {"status": status[1], "note": status[2]}
+            status[0]: {"status": status[1], "note": status[2], "priority": status[3]}
             for status in order_statuses
         }
 
