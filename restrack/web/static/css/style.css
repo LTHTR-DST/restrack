@@ -95,23 +95,7 @@
     font-size: 0.875rem;
 }
 
-.sidebar .custom-worklist-list .worklist-item.selected .worklist-name {
-    color: #dc3545;
-    font-weight: 500;
-}
-
-.sidebar .custom-worklist-list .worklist-name {
-    margin-right: 0.5rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.sidebar .custom-worklist-list .text-muted {
-    color: rgba(33, 37, 41, 0.65) !important;
-    font-size: 0.875rem;
-}
-
+/* Loading states */
 .sidebar .compact-list .text-muted {
     font-size: 0.8rem;
     white-space: nowrap;

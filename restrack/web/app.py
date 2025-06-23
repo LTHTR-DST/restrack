@@ -36,7 +36,6 @@ from restrack.auth import (
     verify_password,
 )
 from restrack.models.worklist import User, WorkList
-from restrack.models.worklist import User as UserModel
 from restrack.web.utils import get_status_class, get_status_description
 
 # Create the main app
@@ -150,7 +149,6 @@ async def login(
 
     # Redirect to dashboard with token in cookie
     response = RedirectResponse(url="/", status_code=302)
-    print("DEBUG: Created redirect response to /")
 
     # Set secure cookie with token
     response.set_cookie(
@@ -161,8 +159,6 @@ async def login(
         secure=False,  # Set to True in production with HTTPS
         samesite="lax",
     )
-    print(f"DEBUG: Set cookie access_token with value starting: {access_token[:15]}...")
-    print(f"DEBUG: Cookie will expire in {ACCESS_TOKEN_EXPIRE_MINUTES} minutes")
 
     return response
 
@@ -538,7 +534,7 @@ async def create_user(
 
     try:
         hashed_password = hash_password(password)
-        user = UserModel(
+        user = User(
             username=username,
             email=email,
             password=hashed_password,
@@ -550,39 +546,6 @@ async def create_user(
         return f"<div class='alert alert-danger'>{e.detail}</div>"
     except Exception as e:
         return f"<div class='alert alert-danger'>Error creating user: {str(e)}</div>"
-
-
-@app.get("/worklists/refresh")
-async def refresh_worklists(
-    request: Request,
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_app_db_session),
-):
-    """Refresh worklist selector"""
-
-    worklists = get_user_worklists(current_user.id, session)
-
-    # Get stats for each worklist
-    remote_session = next(get_remote_db_session())
-    worklists_with_stats = []
-
-    for worklist in worklists:
-        order_count, patient_count = get_worklist_stats(
-            worklist.id, session, remote_session
-        )
-        worklist_dict = {
-            "id": worklist.id,
-            "name": worklist.name,
-            "description": worklist.description,
-            "order_count": order_count,
-            "patient_count": patient_count,
-        }
-        worklists_with_stats.append(worklist_dict)
-
-    return templates.TemplateResponse(
-        "components/worklist_selector.html",
-        {"request": request, "worklists": worklists_with_stats, "user": current_user},
-    )
 
 
 @app.get("/worklists/{worklist_id}/stats")

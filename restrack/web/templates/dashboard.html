@@ -1,3 +1,4 @@
+{# dashboard.html - Jinja2 Template #}
 {% extends "base.html" %}
 
 {% block content %}
@@ -47,9 +48,6 @@
 
             <!-- Manage Worklists Tab -->
             <div class="tab-pane fade" id="manage" role="tabpanel">
-                <!-- DEBUG: Manage Worklists tab loaded -->
-                <!-- <div class="alert alert-info mb-2">DEBUG: Manage Worklists tab loaded. If you see this, the template is
-                    rendering.</div> -->
                 <div class="row mt-3">
                     <div class="col-md-4">
                         <div class="card">
@@ -193,7 +191,8 @@
     </div>
 </div>
 
-<script>
+<script type="text/javascript">
+    // @ts-nocheck
     // Set current user ID for JavaScript functions
     window.currentUserId = {{ user.id }};
 

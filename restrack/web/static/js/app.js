@@ -441,28 +441,6 @@ function copyWorklist(sourceWorklistId) {
         });
 }
 
-// Show alert message
-// function showAlert(message, type = 'info') {
-//     const alertArea = document.getElementById('alert-area');
-//     if (!alertArea) return;
-
-//     const alertDiv = document.createElement('div');
-//     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-//     alertDiv.innerHTML = `
-//         ${message}
-//         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-//     `;
-
-//     alertArea.appendChild(alertDiv);
-
-//     // Auto-dismiss after 5 seconds
-//     setTimeout(() => {
-//         if (alertDiv.parentNode) {
-//             alertDiv.remove();
-//         }
-//     }, 5000);
-// }
-
 // Show toast notification (for non-intrusive messages)
 function showToast(message, type = 'info') {
     const toastContainer = document.getElementById('toast-container');

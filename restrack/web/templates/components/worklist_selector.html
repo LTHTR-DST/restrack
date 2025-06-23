@@ -1,7 +1,10 @@
+{# worklist_selector.html - Jinja2 Template #}
+<!-- VSCode: Suppress JavaScript/TypeScript warnings for template syntax -->
 <div class="custom-worklist-list">
     {% for worklist in worklists %}
     <a href="#" class="worklist-item" 
         data-worklist-id="{{ worklist.id }}"
+        data-worklist-name="{{ worklist.name }}"
         onclick="selectWorklist({{ worklist.id }}, '{{ worklist.name }}')"
         {% if worklist.description %}data-bs-toggle="tooltip" title="{{ worklist.description }}"{% endif %}>
         <div class="d-flex w-100 justify-content-between align-items-center">
@@ -29,7 +32,9 @@
     {% endif %}
 </div>
 
-<script>
+<script type="text/javascript">
+    // @ts-nocheck
+    /* eslint-disable */
     // Store current user ID for JavaScript functions
     window.currentUserId = {{ user.id }};
 
