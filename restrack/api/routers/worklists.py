@@ -459,21 +459,27 @@ async def copy_worklist(
     """
     worklists = json.loads(worklist_to_copy)
     try:
-        # Get order IDs directly from local database
+        # Get order IDs with all metadata from local database
         with local_session as session:
-            statement = select(OrderWorkList.order_id, OrderWorkList.status).where(
+            statement = select(
+                OrderWorkList.order_id, 
+                OrderWorkList.status, 
+                OrderWorkList.priority, 
+                OrderWorkList.user_note
+            ).where(
                 OrderWorkList.worklist_id == worklists["worklist_to_copy_from"]
             )
-            order_ids = session.exec(statement).fetchall()
+            order_data = session.exec(statement).fetchall()
 
-        if not order_ids:
+        if not order_data:
             return True  # Nothing to copy
 
-        for order_id in order_ids:
+        for order_row in order_data:
+            order_id, status, priority, user_note = order_row
             # Check if order already exists in worklist
             statement = select(OrderWorkList).where(
                 and_(
-                    OrderWorkList.order_id == order_id[0],
+                    OrderWorkList.order_id == order_id,
                     OrderWorkList.worklist_id == worklists["current_worklist"],
                 )
             )
@@ -481,9 +487,11 @@ async def copy_worklist(
             if not existing:
                 local_session.add(
                     OrderWorkList(
-                        order_id=order_id[0],
+                        order_id=order_id,
                         worklist_id=worklists["current_worklist"],
-                        status=order_id[1],
+                        status=status or "",
+                        priority=priority or "",
+                        user_note=user_note or ""
                     )
                 )
         local_session.commit()

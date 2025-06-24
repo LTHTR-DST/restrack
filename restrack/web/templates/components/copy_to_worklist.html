@@ -1,0 +1,57 @@
+<div class="mb-3"></div>
+    <label class="form-label">Copy to Another Worklist (with Status & Notes)</label>
+    <div class="input-group">
+        <select class="form-select" id="copy-to-worklist-select">
+            <option value="">Choose a worklist...</option>
+            {% for worklist in worklists %}
+            <option value="{{ worklist.id }}">{{ worklist.name }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-outline-primary" onclick="copyToAnotherWorklist()" type="button">
+            <i class="bi bi-copy"></i> Copy
+        </button>
+    </div>
+</div>
+
+<script>
+    function copyToAnotherWorklist() {
+        const select = document.getElementById('copy-to-worklist-select');
+        const targetWorklistId = parseInt(select.value);        if (!targetWorklistId) {
+            showToast('Please select a worklist to copy to', 'warning');
+            return;
+        }
+
+        if (selectedOrders.size === 0) {
+            showToast('Please select orders to copy', 'warning');
+            return;
+        }
+
+        if (!currentWorklistId) {
+            showToast('This function is only available when viewing a worklist. Please select a worklist first.', 'warning');
+            return;
+        }const orderIds = Array.from(selectedOrders);
+
+        // Use the new copy endpoint that preserves status, note, and priority
+        fetch('/api/v1/copy_to_worklist/' + encodeURIComponent(JSON.stringify({
+            source_worklist_id: currentWorklistId,
+            target_worklist_id: targetWorklistId,
+            order_ids: orderIds
+        })), {
+            method: 'PUT'
+        })
+        .then(response => response.json())        .then(success => {
+            if (success) {
+                showToast(`Copied ${orderIds.length} orders to worklist with status, notes, and priority preserved`, 'success');
+                selectedOrders.clear();
+                updateActionButtons();
+                select.value = '';
+            } else {
+                showToast('Failed to copy orders to worklist', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error copying orders to worklist', 'danger');
+        });
+    }
+</script>

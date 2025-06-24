@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 # Database connection strings
 DB_RESTRACK = os.getenv("DB_RESTRACK", "sqlite:///restrack.db")
 DB_OMOP = os.getenv("DB_CDM")
+print ("omop db",DB_OMOP)
 
 # Create database engines
 local_engine = create_engine(DB_RESTRACK)

@@ -21,7 +21,7 @@ from restrack.api.main import (
 )
 from restrack.api.routers.orders import get_patient_orders, get_worklist_orders
 from restrack.api.routers.users import create_user as api_create_user
-from restrack.api.routers.users import get_user_by_username
+from restrack.api.routers.users import get_user_by_username, get_all_users, delete_user as api_delete_user
 from restrack.api.routers.worklists import create_worklist as api_create_worklist
 from restrack.api.routers.worklists import (
     get_all_worklists,
@@ -36,7 +36,6 @@ from restrack.auth import (
     verify_password,
 )
 from restrack.models.worklist import User, WorkList
-from restrack.models.worklist import User as UserModel
 from restrack.web.utils import get_status_class, get_status_description
 
 # Create the main app
@@ -150,7 +149,6 @@ async def login(
 
     # Redirect to dashboard with token in cookie
     response = RedirectResponse(url="/", status_code=302)
-    print("DEBUG: Created redirect response to /")
 
     # Set secure cookie with token
     response.set_cookie(
@@ -161,8 +159,6 @@ async def login(
         secure=False,  # Set to True in production with HTTPS
         samesite="lax",
     )
-    print(f"DEBUG: Set cookie access_token with value starting: {access_token[:15]}...")
-    print(f"DEBUG: Cookie will expire in {ACCESS_TOKEN_EXPIRE_MINUTES} minutes")
 
     return response
 
@@ -266,7 +262,7 @@ async def worklist_orders(
         # Combine orders with their statuses
         order_dict = {order.order_id: order for order in orders}  # noqa ruff:f841
         status_dict = {
-            status[0]: {"status": status[1], "note": status[2]}
+            status[0]: {"status": status[1], "note": status[2], "priority": status[3]}
             for status in order_statuses
         }
 
@@ -293,15 +289,20 @@ async def worklist_orders(
             }
             combined_orders.append(order_info)
 
-        # Sort orders by patient_id for grouping
-        combined_orders.sort(key=lambda x: x["order"].patient_id)
+        # Sort orders by patient_id and date (descending) for grouping
+        combined_orders.sort(key=lambda x: (x["order"].patient_id, x["order"].event_datetime or datetime.min), reverse=True)
 
         # Group orders by patient_id
         grouped_orders = {}
         for patient_id, group in groupby(
             combined_orders, key=lambda x: x["order"].patient_id
         ):
-            grouped_orders[patient_id] = list(group)
+            # Convert group to list and ensure it maintains the date sorting within the group
+            grouped_orders[patient_id] = sorted(
+                list(group),
+                key=lambda x: x["order"].event_datetime or datetime.min,
+                reverse=True
+            )
 
         return templates.TemplateResponse(
             "components/orders_table.html",
@@ -358,6 +359,12 @@ async def patient_orders(
                 "system_status_class": system_status_class,
             }
             combined_orders.append(order_info)
+            
+        # Sort orders by date descending
+        combined_orders.sort(
+            key=lambda x: x["order"].event_datetime or datetime.min,
+            reverse=True
+        )
 
         return templates.TemplateResponse(
             "components/orders_table.html",
@@ -387,8 +394,8 @@ async def create_worklist(
         worklist = WorkList(
             name=name, description=description, created_by=current_user.id
         )
-        created_worklist = api_create_worklist(worklist, session)
-        return f"<div class='alert alert-success'>Worklist '{created_worklist.name}' created successfully!</div>"
+        api_create_worklist(worklist, session)
+        return f"<div class='alert alert-success'>Worklist '{name}' created successfully!</div>"
     except HTTPException as e:
         return f"<div class='alert alert-danger'>{e.detail}</div>"
     except Exception as e:
@@ -478,6 +485,23 @@ async def delete_manager(
     )
 
 
+@app.get("/users/delete-manager")
+async def delete_user_manager(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_app_db_session),
+):
+    """Get delete user manager component (admin only)"""
+    if current_user.username != "admin":
+        return "<div class='alert alert-danger'>Access denied</div>"
+
+    all_users = get_all_users(session)
+    return templates.TemplateResponse(
+        "components/delete_user_manager.html",
+        {"request": request, "users": all_users, "user": current_user},
+    )
+
+
 @app.post("/users/create")
 async def create_user(
     request: Request,
@@ -510,7 +534,7 @@ async def create_user(
 
     try:
         hashed_password = hash_password(password)
-        user = UserModel(
+        user = User(
             username=username,
             email=email,
             password=hashed_password,
@@ -522,39 +546,6 @@ async def create_user(
         return f"<div class='alert alert-danger'>{e.detail}</div>"
     except Exception as e:
         return f"<div class='alert alert-danger'>Error creating user: {str(e)}</div>"
-
-
-@app.get("/worklists/refresh")
-async def refresh_worklists(
-    request: Request,
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_app_db_session),
-):
-    """Refresh worklist selector"""
-
-    worklists = get_user_worklists(current_user.id, session)
-
-    # Get stats for each worklist
-    remote_session = next(get_remote_db_session())
-    worklists_with_stats = []
-
-    for worklist in worklists:
-        order_count, patient_count = get_worklist_stats(
-            worklist.id, session, remote_session
-        )
-        worklist_dict = {
-            "id": worklist.id,
-            "name": worklist.name,
-            "description": worklist.description,
-            "order_count": order_count,
-            "patient_count": patient_count,
-        }
-        worklists_with_stats.append(worklist_dict)
-
-    return templates.TemplateResponse(
-        "components/worklist_selector.html",
-        {"request": request, "worklists": worklists_with_stats, "user": current_user},
-    )
 
 
 @app.get("/worklists/{worklist_id}/stats")
@@ -648,14 +639,7 @@ async def change_password(
         db_user.must_change_password = False
         session.add(db_user)
         session.commit()
-        return templates.TemplateResponse(
-            "change_password.html",
-            {
-                "request": request,
-                "user": db_user,
-                "success": "Password changed successfully.",
-            },
-        )
+        return RedirectResponse(url="/", status_code=302)
     except Exception as e:
         return templates.TemplateResponse(
             "change_password.html",
@@ -665,6 +649,29 @@ async def change_password(
                 "error": f"Error changing password: {str(e)}",
             },
         )
+
+
+@app.get("/worklists/copy-to-selector")
+async def copy_to_worklist_selector(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_app_db_session),
+):
+    """Get copy-to-worklist selector component"""
+    try:
+        # Get all worklists except the current one
+        worklists = get_all_worklists(session)
+        
+        return templates.TemplateResponse(
+            "components/copy_to_worklist.html",
+            {
+                "request": request,
+                "worklists": worklists,
+                "user": current_user,
+            },
+        )
+    except Exception as e:
+        return f"<div class='alert alert-danger'>Error loading worklist selector: {str(e)}</div>"
 
 
 if __name__ == "__main__":

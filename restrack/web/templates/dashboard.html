@@ -1,3 +1,4 @@
+{# dashboard.html - Jinja2 Template #}
 {% extends "base.html" %}
 
 {% block content %}
@@ -40,53 +41,13 @@
                             <div class="text-center mt-5">
                                 <p class="text-muted">Select a worklist to view orders</p>
                             </div>
-                        </div>
-
-                        <!-- Action buttons row -->
-                        <div class="row mt-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Status Action</label>
-                                <select class="form-select" id="status-select" onchange="updateOrderStatus()">
-                                    <option value="">Select status...</option>
-                                    <option value="Secretary seen">Secretary seen</option>
-                                    <option value="Clinician notified">Clinician notified</option>
-                                    <option value="Action taken by clinician">Action taken by clinician</option>
-                                    <option value="No action required">No action required</option>
-                                    <option value="Awaiting advice from another clinician">Awaiting advice from another
-                                        clinician</option>
-                                    <option value="Awaiting MDT outcome">Awaiting MDT outcome</option>
-                                    <option value="All actions complete">All actions complete</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Add Note</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="note-input" placeholder="Enter note...">
-                                    <button class="btn btn-success" onclick="addNote()">
-                                        <i class="bi bi-plus"></i>
-                                        Add Note
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">&nbsp;</label>
-                                <div>
-                                    <button class="btn btn-danger" onclick="removeFromWorklist()">
-                                        <i class="bi bi-trash"></i>
-                                        Remove from Worklist
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        </div> <!-- End of worklist-actions div -->
                     </div>
                 </div>
             </div>
 
             <!-- Manage Worklists Tab -->
             <div class="tab-pane fade" id="manage" role="tabpanel">
-                <!-- DEBUG: Manage Worklists tab loaded -->
-                <!-- <div class="alert alert-info mb-2">DEBUG: Manage Worklists tab loaded. If you see this, the template is
-                    rendering.</div> -->
                 <div class="row mt-3">
                     <div class="col-md-4">
                         <div class="card">
@@ -187,7 +148,30 @@
                     <div class="col-md-6">
                         <div class="card">
                             <div class="card-header bg-danger text-white">
-                                <h6 class="mb-0">Delete Worklist</h6>
+                                <h6 class="mb-0 text-white">Delete User</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Warning: This will completely remove the user!
+                                </div>
+                                <div id="delete-user-manager">
+                                    <!-- Will be loaded via htmx -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <!-- Empty space for now -->
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0 text-white">Delete Worklist</h6>
                             </div>
                             <div class="card-body">
                                 <div class="alert alert-warning">
@@ -207,7 +191,8 @@
     </div>
 </div>
 
-<script>
+<script type="text/javascript">
+    // @ts-nocheck
     // Set current user ID for JavaScript functions
     window.currentUserId = {{ user.id }};
 
@@ -250,7 +235,8 @@
         {% if user.username == 'admin' %}
         if (event.target.getAttribute('data-bs-target') === '#admin') {
             console.log('Loading admin tab components...');
-            // Load delete manager for admin
+            // Load delete managers for admin
+            htmx.ajax('GET', '/users/delete-manager', { target: '#delete-user-manager' });
             htmx.ajax('GET', '/worklists/delete-manager', { target: '#delete-worklist-manager' });
         }
         {% endif %}

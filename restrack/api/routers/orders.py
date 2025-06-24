@@ -22,7 +22,7 @@ router = APIRouter(tags=["orders"])
 
 @router.get(
     path="/worklist_orders/{worklist_id}",
-    response_model=Tuple[List[ORDER], List[Tuple[int, str, str]]],
+    response_model=Tuple[List[ORDER], List[Tuple[int, str, str, str]]],
 )
 def get_worklist_orders(
     worklist_id: int,
@@ -42,7 +42,7 @@ def get_worklist_orders(
     """
     with local_session as local:
         statement = select(
-            OrderWorkList.order_id, OrderWorkList.status, OrderWorkList.user_note
+            OrderWorkList.order_id, OrderWorkList.status, OrderWorkList.user_note, OrderWorkList.priority
         ).where(OrderWorkList.worklist_id == worklist_id)
 
     order_ids_and_status = local.exec(statement).fetchall()
@@ -259,6 +259,42 @@ def comment_orders(
             )
 
 
+@router.put("/update_priority/{orders_to_update}")
+def update_order_priority(
+    orders_to_update: str, local_session: Session = Depends(get_app_db_session)
+):
+    """
+    Updates the priority of orders in all worklists that contain them.
+
+    Args:
+        orders_to_update (str): JSON string containing priority and order_ids.
+        local_session (Session): The database session dependency.
+
+    Returns:
+        bool: True if successful.
+    """
+    priority_data = json.loads(orders_to_update)
+    with local_session as session:
+        try:
+            for order_id in priority_data["order_ids"]:
+                statement = select(OrderWorkList).where(
+                    OrderWorkList.order_id == order_id
+                )
+                # Update priority in all worklists for consistency
+                orders = session.exec(statement).all()
+                if orders:
+                    for order in orders:
+                        order.priority = priority_data["priority"]
+            session.commit()
+            return True
+
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(
+                status_code=500, detail=f"Failed to update order priority: {str(e)}"
+            )
+
+
 @router.post("/annotate/{note_to_add}")
 def annotate_orders(
     note_to_add: str, local_session: Session = Depends(get_app_db_session)
@@ -295,3 +331,78 @@ def annotate_orders(
             raise HTTPException(
                 status_code=500, detail=f"Failed to update order notes: {str(e)}"
             )
+
+
+@router.put(path="/copy_to_worklist/{orders_to_copy}", response_model=bool)
+async def copy_orders_to_worklist(
+    orders_to_copy: str, local_session: Session = Depends(get_app_db_session)
+):
+    """
+    Copies orders to a worklist while preserving status, note, and priority from source worklist.
+
+    Args:
+        orders_to_copy (str): JSON string containing source_worklist_id, target_worklist_id and order_ids.
+        local_session (Session): The database session dependency.
+
+    Returns:
+        bool: True if successful.
+    """
+    copy_data = json.loads(orders_to_copy)
+    source_worklist_id = copy_data["source_worklist_id"]
+    target_worklist_id = copy_data["target_worklist_id"]
+    order_ids = copy_data["order_ids"]
+
+    try:
+        for order_id in order_ids:
+            # Get the source order data with its status, note, and priority
+            source_statement = select(OrderWorkList).where(
+                and_(
+                    OrderWorkList.order_id == order_id,
+                    OrderWorkList.worklist_id == source_worklist_id,
+                )
+            )
+            source_order = local_session.exec(source_statement).first()
+            
+            if not source_order:
+                # If order doesn't exist in source worklist, add it with defaults
+                source_status = ""
+                source_priority = ""
+                source_note = ""
+            else:
+                source_status = source_order.status or ""
+                source_priority = source_order.priority or ""
+                source_note = source_order.user_note or ""
+            
+            # Check if order already exists in target worklist
+            target_statement = select(OrderWorkList).where(
+                and_(
+                    OrderWorkList.order_id == order_id,
+                    OrderWorkList.worklist_id == target_worklist_id,
+                )
+            )
+            existing = local_session.exec(target_statement).first()
+            
+            if not existing:
+                # Add new order with preserved metadata
+                local_session.add(
+                    OrderWorkList(
+                        order_id=order_id, 
+                        worklist_id=target_worklist_id,
+                        status=source_status,
+                        priority=source_priority,
+                        user_note=source_note
+                    )
+                )
+            else:
+                # Update existing order with preserved metadata
+                existing.status = source_status
+                existing.priority = source_priority
+                existing.user_note = source_note
+                local_session.add(existing)
+                
+        local_session.commit()
+        return True
+    except Exception as e:
+        local_session.rollback()
+        logger.error(f"Error copying orders to worklist: {str(e)}")
+        return False

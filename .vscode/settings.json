@@ -1,4 +1,52 @@
 
 
 
-{}
+{
+    "files.associations": {
+        "*.html": "jinja-html"
+    },
+    "emmet.includeLanguages": {
+        "jinja-html": "html"
+    },
+    "html.validate.scripts": false,
+    "html.validate.styles": false,
+    "html.suggest.html5": true,
+    "html.customData": [],
+    "[jinja-html]": {
+        "html.validate.scripts": false,
+        "html.validate.styles": false,
+        "typescript.validate.enable": false,
+        "javascript.validate.enable": false
+    },
+    "[html]": {
+        "html.validate.scripts": false,
+        "html.validate.styles": false,
+        "typescript.validate.enable": false,
+        "javascript.validate.enable": false
+    },
+    "eslint.validate": [],
+    "typescript.validate.enable": false,
+    "javascript.validate.enable": false,
+    "typescript.preferences.includePackageJsonAutoImports": "off",
+    "javascript.preferences.includePackageJsonAutoImports": "off",
+    "js/ts.implicitProjectConfig.checkJs": false,
+    "typescript.implicitProjectConfig.checkJs": false,
+    "javascript.implicitProjectConfig.checkJs": false,
+    "typescript.suggest.autoImports": false,
+    "javascript.suggest.autoImports": false,
+    "html.trace.server": "off",
+    "typescript.disableAutomaticTypeAcquisition": true,
+    "javascript.preferences.quoteStyle": "single",
+    "typescript.preferences.quoteStyle": "single",
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    },
+    "search.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/node_modules": true,
+        "**/venv": true,
+        "**/.venv": true
+    }
+}
